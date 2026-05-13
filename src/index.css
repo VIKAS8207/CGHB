@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cghb-yellow: #FACC15;
+  
+  /* --- 1. ACCESSIBILITY UPDATE: Darker borders for Brighter Mode --- */
+  --color-cghb-border: rgba(0, 0, 0, 0.16); /* Doubled opacity from 0.08 */
+  
+  --radius-cghb-card: 12px;
+  --radius-cghb-btn: 6px;
+  --font-cghb: 'Plus Jakarta Sans', 'Inter', sans-serif;
+
+  /* Theme-specific tokens */
+  --color-bg-main: white;
+  --color-bg-surface: #f8fafc;
+  
+  /* --- 2. ACCESSIBILITY UPDATE: Stronger Text Colors for Brighter Mode --- */
+  --color-text-main: #000000;   /* Pure Black for maximum contrast */
+  --color-text-muted: #404040;  /* Much darker gray (Slate-700/800 range) */
+}
+
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 80px;
+}
+
+/* Dark Mode Overrides (These remain the same as previous) */
+.dark {
+  --color-bg-main: #050505;
+  --color-bg-surface: #0a0a0a; 
+  --color-text-main: #ffffff;
+  --color-text-muted: rgba(255, 255, 255, 0.5);
+  --color-cghb-border: rgba(255, 255, 255, 0.12); 
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--color-bg-main)] text-[var(--color-text-main)] font-cghb antialiased transition-colors duration-300;
+  }
+}
+
+@layer components {
+  /* ==========================================================================
+     3. THE MASTER BACKGROUND STYLE (Gradient + Dotted Grid)
+     Apply this class to your main content wrapper in MainLayout.jsx
+     ========================================================================== */
+  .cghb-master-bg {
+    @apply relative;
+  }
+
+  /* The Warm Gradient Base */
+  .cghb-master-bg::before {
+    content: '';
+    @apply absolute inset-0 z-0 pointer-events-none;
+    /* Very mild yellow to white gradient */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.048) 0%,  rgba(250, 204, 21, 0.062) 50%);
+  }
+
+  /* The Mild Dotted Grid Overlay */
+  .cghb-master-bg::after {
+    content: '';
+    @apply absolute inset-0 z-0 pointer-events-none;
+    background-image: radial-gradient(var(--color-cghb-border) 1px, transparent 1px);
+    background-size: 20px 20px; /* Controls grid density */
+    @apply opacity-50; /* Makes the dots very subtle */
+  }
+
+  /* Re-defining panel to ensure it sits above the new background */
+  .glass-panel {
+    @apply bg-[var(--color-bg-surface)] border border-cghb-border shadow-sm relative z-10;
+  }
+}
