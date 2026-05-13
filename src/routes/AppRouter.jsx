@@ -22,6 +22,8 @@ import QualityAspect from '../pages/QualityAspect';
 import MaterialTesting from '../pages/MaterialTesting';
 import OnsiteTesting from '../pages/MaterialTesting';
 
+import WorkProgress from '../pages/WorkProgress';
+
 // --- AUTH TOOLS ---
 import { AuthProvider } from '../context/AuthContext';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
@@ -90,6 +92,7 @@ const AppRouter = () => {
               <Route path="site-visit/:id/quality-aspect" element={<QualityAspect />} />
               <Route path="site-visit/:id/material-testing" element={<MaterialTesting />} />
               <Route path="site-visit/:id/onsite-testing" element={<OnsiteTesting />} />
+              <Route path="work-progress" element={<WorkProgress />} />
             </Route>
 
           </Route>

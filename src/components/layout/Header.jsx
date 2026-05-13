@@ -5,25 +5,21 @@ const Header = ({ isDarkMode, setIsDarkMode, toggleMobileMenu, isMobileMenuOpen 
     <header className="h-16 lg:h-20 border-b border-cghb-border bg-[var(--color-bg-main)]/80 backdrop-blur-md sticky top-0 z-[100] px-4 lg:px-10 flex items-center justify-between">
       
       {/* MOBILE LEFT: Toggle + Logo */}
-<div className="flex items-center gap-4">
-  <button onClick={toggleMobileMenu} className="lg:hidden p-2 text-[var(--color-text-main)]">
-    {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-  </button>
-  
-  {/* WIDER LOGO CONTAINER */}
-  <div className="flex items-center">
-    <img 
-      src="/image/Logo.png"  /* Replace with your actual path */
-      alt="CGHB Logo" 
-      className="h-8 lg:h-10 w-auto object-contain" 
-    />
-  </div>
-
-  {/* Optional text branding - can be hidden if logo contains text */}
-  <h1 className="hidden md:block text-lg font-black tracking-tighter text-[var(--color-text-main)]">
-    CGHB<span className="text-cghb-yellow">.</span>
-  </h1>
-</div>
+      <div className="flex items-center gap-4">
+        <button onClick={toggleMobileMenu} className="lg:hidden p-2 text-[var(--color-text-main)]">
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+        
+        {/* WIDER LOGO CONTAINER */}
+        <div className="flex items-center">
+          <img 
+            /* Dynamic Image Source based on Dark Mode */
+            src={isDarkMode ? "/image/CGHBwhite.png" : "/image/CGHBblack.png"} 
+            alt="CGHB Logo" 
+            className="h-8 lg:h-10 w-auto object-contain transition-opacity duration-300" 
+          />
+        </div>
+      </div>
 
       {/* UTILITIES: Language & Theme */}
       <div className="flex items-center gap-2">
