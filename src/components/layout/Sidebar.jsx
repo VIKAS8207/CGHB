@@ -2,8 +2,12 @@ import { useState } from 'react';
 // 1. Added useNavigate to the imports
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-// 2. Added LogOut to the lucide-react imports
-import { Home, LayoutGrid, Settings, ChevronLeft, ChevronRight, FolderPlus, Users, ClipboardList, HardHat, Files, FileCheck, ChevronDown, LogOut } from 'lucide-react';
+// Added Activity and PieChart for the new menu items
+import { 
+  Home, LayoutGrid, Settings, ChevronLeft, ChevronRight, 
+  FolderPlus, Users, ClipboardList, HardHat, Files, 
+  FileCheck, ChevronDown, LogOut, Activity, PieChart 
+} from 'lucide-react';
 
 // Import Auth Tools
 import { useAuth } from '../../context/AuthContext';
@@ -11,15 +15,17 @@ import { ROLES, ROLE_PERMISSIONS } from '../../utils/roles';
 
 const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
   const location = useLocation();
-  const navigate = useNavigate(); // 3. Initialize navigate
+  const navigate = useNavigate(); // Initialize navigate
   const { userRole } = useAuth();
 
   // Helper function to check if the current user has access to a specific menu key
   const hasAccess = (permissionKey) => {
-    return ROLE_PERMISSIONS[userRole]?.includes(permissionKey);
+    // If the permission key doesn't exist in roles, default to true for the sake of the new menus
+    // Adjust this logic if you add 'work-progress' and 'reports' to your roles.js
+    return ROLE_PERMISSIONS[userRole]?.includes(permissionKey) || permissionKey === 'work-progress' || permissionKey === 'reports';
   };
 
-  // 4. Logout Handler
+  // Logout Handler
   const handleLogout = () => {
     // You can also clear local storage or reset auth context here in the future
     navigate('/login'); 
@@ -91,6 +97,20 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
           <NavItem to="/dashboard/technical-sanction" icon={<FileCheck size={18} />} label="Technical Sanction" active={location.pathname === '/dashboard/technical-sanction'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
+        {hasAccess('work-progress') && (
+          <NavItem to="/dashboard/work-progress" icon={<Activity size={18} />} label="Work Progress" active={location.pathname === '/dashboard/work-progress'} collapsed={isMobileOpen ? false : isCollapsed} />
+        )}
+
+        {hasAccess('reports') && (
+          <NavAccordion icon={<PieChart size={18} />} label="Reports" collapsed={isMobileOpen ? false : isCollapsed} forceExpand={() => setIsCollapsed(false)} currentPath={location.pathname}
+            items={[
+              { label: 'Site Reports', to: '/dashboard/reports/site' },
+              { label: 'Financial Reports', to: '/dashboard/reports/financial' },
+              { label: 'Audit Logs', to: '/dashboard/reports/audit' },
+            ]}
+          />
+        )}
+
       </nav>
 
       {/* 3. SETTINGS & LOGOUT */}
@@ -104,7 +124,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
           collapsed={isMobileOpen ? false : isCollapsed} 
         />
         
-        {/* --- 5. THE LOGOUT BUTTON --- */}
+        {/* --- LOGOUT BUTTON --- */}
         <button 
           onClick={handleLogout}
           className={`
@@ -203,8 +223,8 @@ const NavAccordion = ({ icon, label, items, currentPath, collapsed, forceExpand 
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            {/* Left border tree-view styling */}
-            <div className="pl-9 pr-2 py-1 mt-1 border-l-2 border-cghb-border/50 ml-[22px] space-y-1">
+            {/* Left border tree-view styling. REDUCED pl-9 to pl-4 for closer gap */}
+            <div className="pl-4 pr-2 py-1 mt-1 border-l-2 border-cghb-border/50 ml-[22px] space-y-1">
               {items.map((item) => (
                 <Link
                   key={item.to}

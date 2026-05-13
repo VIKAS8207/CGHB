@@ -18,6 +18,9 @@ import Schemes from '../pages/Schemes';
 import TechnicalSanction from '../pages/TechnicalSanction';
 
 import WeeklyUpdate from '../pages/WeeklyUpdate';
+import QualityAspect from '../pages/QualityAspect';
+import MaterialTesting from '../pages/MaterialTesting';
+import OnsiteTesting from '../pages/MaterialTesting';
 
 // --- AUTH TOOLS ---
 import { AuthProvider } from '../context/AuthContext';
@@ -84,6 +87,9 @@ const AppRouter = () => {
             <Route element={<ProtectedRoute allowedRoles={[ROLES.COMMISSIONER, ROLES.DEPT_HEAD, ROLES.ENGINEER]} />}>
               <Route path="documentation/*" element={<Documentation />} />
               <Route path="site-visit/:id/weekly-update" element={<WeeklyUpdate />} />
+              <Route path="site-visit/:id/quality-aspect" element={<QualityAspect />} />
+              <Route path="site-visit/:id/material-testing" element={<MaterialTesting />} />
+              <Route path="site-visit/:id/onsite-testing" element={<OnsiteTesting />} />
             </Route>
 
           </Route>
