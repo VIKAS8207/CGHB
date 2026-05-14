@@ -4,7 +4,7 @@ import {
   Building2, Search, Filter, TrendingUp, 
   UserCircle, CalendarDays, AlertTriangle, 
   CheckCircle2, Clock, ChevronLeft, ChevronRight,
-  BarChart3, Eye
+  BarChart3
 } from 'lucide-react';
 
 // --- MOCK DATABASE ---
@@ -93,7 +93,6 @@ const WorkProgress = () => {
 
       {/* --- FILTER & SEARCH GATEWAY --- */}
       <div className="glass-panel p-6 rounded-xl border-t-4 border-t-cghb-yellow shadow-sm">
-        {/* PERFECTLY BALANCED 3-COLUMN GRID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
           
           {/* AE Filter */}
@@ -153,12 +152,11 @@ const WorkProgress = () => {
             <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
               <tr>
                 <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">S.No</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[20%]">Project Details</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[20%]">AE / Contractor</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[25%]">Project Name</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[20%]">Assignee (AE)</th>
                 <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[20%] text-center">Overall Progress</th>
                 <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[15%]">Target Date</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[10%]">Status</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[10%] border-l border-cghb-border">Action</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[15%] border-l border-cghb-border">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cghb-border">
@@ -173,20 +171,18 @@ const WorkProgress = () => {
                         {indexOfFirstItem + index + 1}
                       </td>
 
-                      {/* Project Details */}
+                      {/* Project Name */}
                       <td className="px-4 py-4">
                         <div className="text-[13px] font-bold text-[var(--color-text-main)] truncate" title={item.name}>{item.name}</div>
-                        <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-0.5">{item.id}</div>
                       </td>
 
                       {/* Team */}
                       <td className="px-4 py-4">
-                        <div className="text-[12px] font-bold text-[var(--color-text-main)] truncate" title={item.aeName}>{item.aeName} (AE)</div>
-                        <div className="text-[11px] font-medium text-[var(--color-text-muted)] mt-0.5 truncate" title={item.contractor}>{item.contractor}</div>
+                        <div className="text-[12px] font-bold text-[var(--color-text-main)] truncate" title={item.aeName}>{item.aeName}</div>
                       </td>
 
                       {/* Overall Progress */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4">
                         <ProgressBar value={item.physical} />
                       </td>
 
@@ -198,17 +194,10 @@ const WorkProgress = () => {
                       </td>
 
                       {/* Status */}
-                      <td className="px-4 py-4 text-center">
+                      <td className="px-4 py-4 text-center border-l border-cghb-border/50">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded ${statusConfig.bg} ${statusConfig.color} text-[10px] font-bold uppercase tracking-wider whitespace-nowrap`}>
                           {statusConfig.icon} {item.status}
                         </span>
-                      </td>
-
-                      {/* Action - View Button */}
-                      <td className="px-4 py-4 text-center border-l border-cghb-border/50">
-                        <button className="flex items-center justify-center gap-2 px-3 py-1.5 mx-auto bg-cghb-border/10 border border-cghb-border rounded-md text-[11px] font-bold text-[var(--color-text-main)] hover:bg-cghb-yellow hover:text-black hover:border-cghb-yellow transition-all">
-                          <Eye size={14} /> View
-                        </button>
                       </td>
 
                     </motion.tr>

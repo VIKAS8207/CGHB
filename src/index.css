@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cghb-yellow: #FACC15;
+  /* Replaced #FACC15 with the new orange #F58634. 
+     Kept the variable name 'yellow' so your existing React classes don't break! */
+  --color-cghb-yellow: #F58634; 
   
   /* --- 1. ACCESSIBILITY UPDATE: Darker borders for Brighter Mode --- */
   --color-cghb-border: rgba(0, 0, 0, 0.16); /* Doubled opacity from 0.08 */
@@ -52,8 +54,8 @@
   .cghb-master-bg::before {
     content: '';
     @apply absolute inset-0 z-0 pointer-events-none;
-    /* Very mild yellow to white gradient */
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.048) 0%,  rgba(250, 204, 21, 0.062) 50%);
+    /* Converted #F58634 to rgba(245, 134, 52) to match the subtle background glow */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.048) 0%, rgba(245, 134, 52, 0.062) 50%);
   }
 
   /* The Mild Dotted Grid Overlay */
