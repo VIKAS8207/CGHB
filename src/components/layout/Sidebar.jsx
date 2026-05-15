@@ -1,38 +1,42 @@
 import { useState } from 'react';
-// 1. Added useNavigate to the imports
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-// Added Activity and PieChart for the new menu items
 import { 
   Home, LayoutGrid, Settings, ChevronLeft, ChevronRight, 
   FolderPlus, Users, ClipboardList, HardHat, Files, 
-  FileCheck, ChevronDown, LogOut, Activity, PieChart 
+  FileCheck, ChevronDown, LogOut, Activity, PieChart,
+  ClipboardCheck
 } from 'lucide-react';
 
 // Import Auth Tools
 import { useAuth } from '../../context/AuthContext';
-import { ROLES, ROLE_PERMISSIONS } from '../../utils/roles';
+import { ROLE_PERMISSIONS } from '../../utils/roles';
 
 const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
   const location = useLocation();
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate(); 
   const { userRole } = useAuth();
 
   // Helper function to check if the current user has access to a specific menu key
   const hasAccess = (permissionKey) => {
-    // If the permission key doesn't exist in roles, default to true for the sake of the new menus
-    // Adjust this logic if you add 'work-progress' and 'reports' to your roles.js
-    return ROLE_PERMISSIONS[userRole]?.includes(permissionKey) || permissionKey === 'work-progress' || permissionKey === 'reports';
+    if (!ROLE_PERMISSIONS[userRole]) return true;
+    
+    // Strict check for admin approval (relies entirely on roles.js)
+    if (permissionKey === 'administrative-approval') {
+      return ROLE_PERMISSIONS[userRole].includes(permissionKey);
+    }
+    
+    // Fallback for work-progress and reports in case they aren't in roles.js yet
+    return ROLE_PERMISSIONS[userRole].includes(permissionKey) || 
+           ['work-progress', 'reports'].includes(permissionKey);
   };
 
-  // Logout Handler
   const handleLogout = () => {
-    // You can also clear local storage or reset auth context here in the future
     navigate('/login'); 
   };
 
   return (
-  <aside className={`fixed left-0 top-16 lg:top-20 h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)] glass-panel border-r flex flex-col transition-all duration-300 ease-in-out z-[90] ${isMobileOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'} ${!isMobileOpen && isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
+    <aside className={`fixed left-0 top-16 lg:top-20 h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)] glass-panel border-r flex flex-col transition-all duration-300 ease-in-out z-[90] ${isMobileOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'} ${!isMobileOpen && isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
       
       {/* 1. TOP TOGGLE SECTION */}
       <div className={`hidden lg:flex items-center px-4 py-3 border-b border-cghb-border min-h-[50px] transition-all ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
@@ -42,7 +46,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
               Menu
             </span>
             <span className="px-2 py-0.5 rounded bg-cghb-yellow/20 text-cghb-yellow border border-cghb-yellow/30 text-[9px] font-black uppercase tracking-widest">
-              {userRole.replace('_', ' ')}
+              {userRole ? userRole.replace('_', ' ') : 'LOADING...'}
             </span>
           </div>
         )}
@@ -93,6 +97,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
           <NavItem to="/dashboard/schemes" icon={<LayoutGrid size={18} />} label="Schemes" active={location.pathname === '/dashboard/schemes'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
+        {/* --- Administrative Approval --- */}
+        {hasAccess('administrative-approval') && (
+          <NavItem to="/dashboard/administrative-approval" icon={<ClipboardCheck size={18} />} label="Admin Approval" active={location.pathname === '/dashboard/administrative-approval'} collapsed={isMobileOpen ? false : isCollapsed} />
+        )}
+
         {hasAccess('technical-sanction') && (
           <NavItem to="/dashboard/technical-sanction" icon={<FileCheck size={18} />} label="Technical Sanction" active={location.pathname === '/dashboard/technical-sanction'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
@@ -114,7 +123,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
       </nav>
 
       {/* 3. SETTINGS & LOGOUT */}
-      {/* Wrapped in a space-y-1 to keep spacing consistent */}
       <div className="p-4 border-t border-cghb-border mt-2 space-y-1">
         <NavItem 
           to="/dashboard/settings" 
@@ -124,7 +132,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
           collapsed={isMobileOpen ? false : isCollapsed} 
         />
         
-        {/* --- LOGOUT BUTTON --- */}
         <button 
           onClick={handleLogout}
           className={`
@@ -171,13 +178,12 @@ const NavItem = ({ icon, label, to, active = false, collapsed = false }) => (
 
 // --- ACCORDION COMPONENT FOR SUB-MENUS ---
 const NavAccordion = ({ icon, label, items, currentPath, collapsed, forceExpand }) => {
-  // Check if any child route is currently active
   const isActive = items.some(item => currentPath === item.to);
   const [isOpen, setIsOpen] = useState(isActive);
 
   const handleToggle = () => {
     if (collapsed) {
-      forceExpand(); // Expands the sidebar automatically if collapsed
+      forceExpand();
       setIsOpen(true);
     } else {
       setIsOpen(!isOpen);
@@ -223,7 +229,6 @@ const NavAccordion = ({ icon, label, items, currentPath, collapsed, forceExpand 
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            {/* Left border tree-view styling. REDUCED pl-9 to pl-4 for closer gap */}
             <div className="pl-4 pr-2 py-1 mt-1 border-l-2 border-cghb-border/50 ml-[22px] space-y-1">
               {items.map((item) => (
                 <Link

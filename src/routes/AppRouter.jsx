@@ -15,6 +15,7 @@ import Advertisement from '../pages/Advertisement';
 import RateApproval from '../pages/RateApproval';
 import TenderAgreement from '../pages/TenderAgreement'; // Adjust the path if your folder structure is different
 import Schemes from '../pages/Schemes';
+import AdministrativeApproval from '../pages/AdministrativeApproval';
 import TechnicalSanction from '../pages/TechnicalSanction';
 
 import WeeklyUpdate from '../pages/WeeklyUpdate';
@@ -74,6 +75,7 @@ const AppRouter = () => {
               <Route path="tender/agreement" element={<TenderAgreement />} />
 
               <Route path="schemes" element={<Schemes />} />
+              <Route path="administrative-approval" element={<AdministrativeApproval />} />
               <Route path="technical-sanction" element={<TechnicalSanction />} />
               
               

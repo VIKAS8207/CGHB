@@ -11,7 +11,6 @@ import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../utils/roles';
 
 // Mock Database matched to the Translated Hindi Headers
-// Structure: docs object holds arrays for multiple file uploads
 const initialSanctions = [
   { 
     id: 'TS-2026-088', projectName: 'Atal Vihar Phase 3', zone: 'Raipur South', agency: 'CGHB Urban', scheme: 'Atal Vihar Yojana',
@@ -56,11 +55,6 @@ const TechnicalSanction = () => {
   const [activeWorkspace, setActiveWorkspace] = useState(null);
   const [activeTab, setActiveTab] = useState('tsLetter');
 
-  // Document Builder Inputs
-  const [newDocName, setNewDocName] = useState('');
-  const [newDocDesc, setNewDocDesc] = useState('');
-  const [newDocFile, setNewDocFile] = useState('');
-
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -69,21 +63,18 @@ const TechnicalSanction = () => {
   const handleOpenWorkspace = (project) => {
     setActiveWorkspace(project);
     setActiveTab('tsLetter');
-    setNewDocName(''); setNewDocDesc(''); setNewDocFile('');
   };
 
   const handleBack = () => {
     setActiveWorkspace(null);
   };
 
-  const handleAddDocument = () => {
-    if (!newDocName.trim() || !newDocFile) return;
-
+  const handleAddDocument = (newDocData) => {
     const newDoc = {
       id: Date.now(),
-      name: newDocName,
-      desc: newDocDesc,
-      file: newDocFile
+      name: newDocData.name,
+      desc: newDocData.desc,
+      file: newDocData.file
     };
 
     const updatedWorkspace = { ...activeWorkspace };
@@ -92,9 +83,6 @@ const TechnicalSanction = () => {
     // Update global state which automatically updates the status logic
     setSanctions(sanctions.map(s => s.id === updatedWorkspace.id ? updatedWorkspace : s));
     setActiveWorkspace(updatedWorkspace);
-
-    // Reset Inputs
-    setNewDocName(''); setNewDocDesc(''); setNewDocFile('');
   };
 
   const handleDeleteDocument = (docId) => {
@@ -134,6 +122,54 @@ const TechnicalSanction = () => {
     { id: 'drawing', label: 'Drawings & Plan' }
   ];
 
+  // --- INDEPENDENT INPUT ROW COMPONENT ---
+  // Keeps its own state so you can add multiple files easily without glitching
+  const InputRow = ({ onSave }) => {
+    const [name, setName] = useState('');
+    const [desc, setDesc] = useState('');
+    const [fileName, setFileName] = useState('');
+
+    const handleAdd = () => {
+      onSave({ name, desc, file: fileName });
+      setName('');
+      setDesc('');
+      setFileName('');
+    };
+
+    return (
+      <tr className="bg-[var(--color-bg-surface)]">
+        <td className="px-4 py-3">
+          <input 
+            type="text" placeholder="Enter doc name..." value={name} onChange={e => setName(e.target.value)} 
+            className="w-full h-9 bg-[var(--color-bg-main)] border border-cghb-border text-[var(--color-text-main)] text-[12px] rounded-lg px-3 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" 
+          />
+        </td>
+        <td className="px-4 py-3">
+          <input 
+            type="text" placeholder="Brief description..." value={desc} onChange={e => setDesc(e.target.value)} 
+            className="w-full h-9 bg-[var(--color-bg-main)] border border-cghb-border text-[var(--color-text-main)] text-[12px] rounded-lg px-3 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" 
+          />
+        </td>
+        <td className="px-4 py-3">
+          <label className="w-full h-9 border border-dashed border-cghb-border bg-[var(--color-bg-main)] rounded-lg flex items-center justify-center text-[11px] font-bold cursor-pointer transition-all hover:border-cghb-yellow hover:text-cghb-yellow text-[var(--color-text-muted)] shadow-sm">
+            <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => { if (e.target.files.length > 0) setFileName(e.target.files[0].name); }} />
+            {fileName ? <span className="flex items-center gap-1.5 text-emerald-500"><Check size={12}/> {fileName}</span> : <span className="flex items-center gap-1.5"><UploadCloud size={14}/> Select File</span>}
+          </label>
+        </td>
+        <td className="px-4 py-3 text-center border-l border-cghb-border/50">
+          <button 
+            onClick={handleAdd}
+            disabled={!name.trim() || !fileName}
+            className="w-8 h-8 mx-auto flex items-center justify-center bg-cghb-yellow text-black rounded-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            title="Add Document"
+          >
+            <Plus size={16} strokeWidth={3} />
+          </button>
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <div className="w-full max-w-[1500px] mx-auto animate-in fade-in duration-300 font-sans relative z-10 space-y-6">
       <AnimatePresence mode="wait">
@@ -170,22 +206,22 @@ const TechnicalSanction = () => {
               </button>
             </div>
 
-            {/* --- MASTER TABLE (LOCKED UI - TRANSLATED FIELDS) --- */}
-            <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden">
-              <div className="w-full">
-                <table className="w-full table-fixed text-left whitespace-nowrap">
+            {/* --- MASTER TABLE --- */}
+            <div className="bg-[var(--color-bg-main)] shadow-md rounded-lg border border-cghb-border flex flex-col w-full overflow-hidden">
+              <div className="w-full overflow-x-auto">
+                <table className="w-full table-fixed text-left whitespace-nowrap min-w-[1100px]">
                   <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
                     <tr>
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[4%]">S.No</th>
-                      <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[14%]">Name of Work</th>
+                      <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[16%]">Name of Work</th>
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Zone</th>
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Agency</th>
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Scheme</th>
-                      <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[9%]">Tech. Sanc.</th>
+                      <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Tech. Sanc.</th>
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[9%]">Admin. Sanc.</th>
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[9%]">Tender Sanc.</th>
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Progress Stage</th>
-                      <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%]">Work Desc.</th>
+                      <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[9%]">Work Desc.</th>
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%] border-l border-cghb-border">Action</th>
                     </tr>
                   </thead>
@@ -195,7 +231,7 @@ const TechnicalSanction = () => {
                         const tsStatus = calculateTSStatus(sanction.docs);
                         
                         return (
-                          <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={sanction.id} className="bg-transparent border-b border-cghb-border/50 last:border-0">
+                          <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={sanction.id} className="bg-transparent border-b border-cghb-border/50 hover:bg-cghb-border/5 transition-colors">
                             <td className="px-3 py-4 text-center text-[11px] font-bold text-[var(--color-text-muted)] truncate" title={indexOfFirstItem + index + 1}>{indexOfFirstItem + index + 1}</td>
                             <td className="px-3 py-4 text-[12px] font-bold text-[var(--color-text-main)] truncate" title={sanction.projectName}>{sanction.projectName}</td>
                             <td className="px-3 py-4 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={sanction.zone}>{sanction.zone}</td>
@@ -234,15 +270,10 @@ const TechnicalSanction = () => {
                               
                               {activeDropdown === sanction.id && (
                                 <div className="absolute right-8 top-6 w-32 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-xl z-50 flex flex-col py-1.5 text-left">
-                                  {userRole === ROLES.COMMISSIONER ? (
-                                    <button onClick={() => { handleOpenWorkspace(sanction); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
-                                      <FileSearch size={14} /> Review Docs
-                                    </button>
-                                  ) : (
-                                    <button onClick={() => { handleOpenWorkspace(sanction); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
-                                      <UploadCloud size={14} /> Workspace
-                                    </button>
-                                  )}
+                                  <button onClick={() => { handleOpenWorkspace(sanction); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
+                                    {userRole === ROLES.COMMISSIONER ? <FileSearch size={14} /> : <UploadCloud size={14} />} 
+                                    {userRole === ROLES.COMMISSIONER ? 'Review Docs' : 'Workspace'}
+                                  </button>
                                 </div>
                               )}
                             </td>
@@ -252,14 +283,14 @@ const TechnicalSanction = () => {
                     </AnimatePresence>
                   </tbody>
                 </table>
-
-                {currentSanctions.length === 0 && (
-                  <div className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium flex flex-col items-center justify-center gap-3 border-t border-cghb-border/50">
-                    <FileSearch size={32} className="text-[var(--color-text-muted)]/30" />
-                    No project records found.
-                  </div>
-                )}
               </div>
+
+              {currentSanctions.length === 0 && (
+                <div className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium flex flex-col items-center justify-center gap-3 border-t border-cghb-border/50">
+                  <FileSearch size={32} className="text-[var(--color-text-muted)]/30" />
+                  No project records found.
+                </div>
+              )}
 
               {/* --- ALWAYS VISIBLE PAGINATION --- */}
               <div className="border-t border-cghb-border px-5 py-4 flex items-center justify-between bg-[var(--color-bg-surface)]">
@@ -307,11 +338,11 @@ const TechnicalSanction = () => {
               {/* Dynamic Status Indicator */}
               <div className="ml-auto">
                 {calculateTSStatus(activeWorkspace.docs) === 'Approved' ? (
-                  <span className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-lg text-[13px] font-bold uppercase tracking-wider">
+                  <span className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-lg text-[13px] font-bold uppercase tracking-wider shadow-sm">
                     <CheckCircle size={16} /> TS Requirements Met
                   </span>
                 ) : (
-                  <span className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 text-orange-600 border border-orange-500/20 rounded-lg text-[13px] font-bold uppercase tracking-wider">
+                  <span className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 text-orange-600 border border-orange-500/20 rounded-lg text-[13px] font-bold uppercase tracking-wider shadow-sm">
                     <Clock size={16} /> Awaiting Documents
                   </span>
                 )}
@@ -319,12 +350,12 @@ const TechnicalSanction = () => {
             </div>
 
             {/* --- TOP-LEFT ALIGNED TAB MENU --- */}
-            <div className="flex gap-6 border-b border-cghb-border/50">
+            <div className="flex flex-wrap gap-6 border-b border-cghb-border/50">
               {TABS.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`pb-3 text-[14px] font-bold uppercase tracking-wider transition-all relative ${activeTab === tab.id ? 'text-[var(--color-text-main)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'}`}
+                  className={`pb-3 text-[13px] font-bold uppercase tracking-wider transition-all relative flex items-center gap-2 ${activeTab === tab.id ? 'text-[var(--color-text-main)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'}`}
                 >
                   {tab.label}
                   {activeTab === tab.id && (
@@ -335,80 +366,47 @@ const TechnicalSanction = () => {
             </div>
 
             {/* --- TAB CONTENT: INLINE DOCUMENT BUILDER TABLE --- */}
-            <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden mt-4">
-              <table className="w-full text-left whitespace-nowrap table-fixed">
-                <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b border-cghb-border">
-                  <tr>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider w-[25%]">Document Name</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider w-[40%]">Description</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider w-[25%]">File</th>
-                    <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider text-center w-[10%] border-l border-cghb-border">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-cghb-border/50">
-                  {/* Map Existing Documents */}
-                  <AnimatePresence>
-                    {activeWorkspace.docs[activeTab].map((doc) => (
-                      <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={doc.id} className="bg-transparent">
-                        <td className="px-4 py-4 text-[13px] font-bold text-[var(--color-text-main)] truncate" title={doc.name}>{doc.name}</td>
-                        <td className="px-4 py-4 text-[12px] font-medium text-[var(--color-text-muted)] truncate" title={doc.desc}>{doc.desc}</td>
-                        <td className="px-4 py-4 text-[12px] font-bold text-blue-500 truncate cursor-pointer hover:underline flex items-center gap-2" title={doc.file}>
-                          <FileText size={14} /> {doc.file}
-                        </td>
-                        <td className="px-4 py-4 text-center border-l border-cghb-border/50">
-                          {userRole !== ROLES.COMMISSIONER ? (
-                            <button onClick={() => handleDeleteDocument(doc.id)} className="text-red-500 hover:text-red-400 transition-colors p-1.5 rounded hover:bg-red-500/10" title="Remove Document">
-                              <Trash2 size={16} />
-                            </button>
-                          ) : (
-                            <span className="text-[var(--color-text-muted)]/30">-</span>
-                          )}
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-
-                  {/* Document Builder Input Row (Hidden for Commissioner) */}
-                  {userRole !== ROLES.COMMISSIONER && (
-                    <tr className="bg-[var(--color-bg-surface)]">
-                      <td className="px-4 py-3">
-                        <input 
-                          type="text" placeholder="Enter doc name..." value={newDocName} onChange={e => setNewDocName(e.target.value)} 
-                          className="w-full h-9 bg-[var(--color-bg-main)] border border-cghb-border text-[var(--color-text-main)] text-[12px] rounded-md px-3 focus:outline-none focus:border-cghb-yellow transition-all" 
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input 
-                          type="text" placeholder="Brief description..." value={newDocDesc} onChange={e => setNewDocDesc(e.target.value)} 
-                          className="w-full h-9 bg-[var(--color-bg-main)] border border-cghb-border text-[var(--color-text-main)] text-[12px] rounded-md px-3 focus:outline-none focus:border-cghb-yellow transition-all" 
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <label className="w-full h-9 border border-dashed border-cghb-border bg-[var(--color-bg-main)] rounded-md flex items-center justify-center text-[11px] font-bold cursor-pointer transition-all hover:border-cghb-yellow hover:text-cghb-yellow text-[var(--color-text-muted)]">
-                          <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => { if (e.target.files.length > 0) setNewDocFile(e.target.files[0].name); }} />
-                          {newDocFile ? <span className="flex items-center gap-1.5 text-emerald-500"><Check size={12}/> {newDocFile}</span> : <span className="flex items-center gap-1.5"><UploadCloud size={14}/> Select File</span>}
-                        </label>
-                      </td>
-                      <td className="px-4 py-3 text-center border-l border-cghb-border/50">
-                        <button 
-                          onClick={handleAddDocument}
-                          disabled={!newDocName.trim() || !newDocFile}
-                          className="w-8 h-8 mx-auto flex items-center justify-center bg-cghb-yellow text-black rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                          title="Add Document"
-                        >
-                          <Plus size={16} strokeWidth={3} />
-                        </button>
-                      </td>
+            <div className="bg-[var(--color-bg-main)] shadow-md rounded-lg border border-cghb-border flex flex-col w-full overflow-hidden mt-4">
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-left whitespace-nowrap table-fixed min-w-[800px]">
+                  <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b border-cghb-border">
+                    <tr>
+                      <th className="px-4 py-3 font-bold text-[10px] uppercase tracking-wider w-[25%]">Document Name</th>
+                      <th className="px-4 py-3 font-bold text-[10px] uppercase tracking-wider w-[40%]">Description</th>
+                      <th className="px-4 py-3 font-bold text-[10px] uppercase tracking-wider w-[25%]">File</th>
+                      <th className="px-4 py-3 font-bold text-[10px] uppercase tracking-wider text-center w-[10%] border-l border-cghb-border">Action</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-              
-              {activeWorkspace.docs[activeTab].length === 0 && userRole === ROLES.COMMISSIONER && (
-                <div className="p-8 text-center text-[var(--color-text-muted)] text-[13px] font-medium border-t border-cghb-border/50">
-                  No documents uploaded for this category yet.
-                </div>
-              )}
+                  </thead>
+                  <tbody className="divide-y divide-cghb-border/50">
+                    
+                    {/* Map Existing Documents */}
+                    <AnimatePresence>
+                      {activeWorkspace.docs[activeTab].map((doc) => (
+                        <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={doc.id} className="bg-transparent hover:bg-cghb-border/5 transition-colors">
+                          <td className="px-4 py-4 text-[13px] font-bold text-[var(--color-text-main)] truncate" title={doc.name}>{doc.name}</td>
+                          <td className="px-4 py-4 text-[12px] font-medium text-[var(--color-text-muted)] truncate" title={doc.desc}>{doc.desc}</td>
+                          <td className="px-4 py-4 text-[12px] font-bold text-blue-500 truncate cursor-pointer hover:underline flex items-center gap-2" title={doc.file}>
+                            <FileText size={14} /> {doc.file}
+                          </td>
+                          <td className="px-4 py-4 text-center border-l border-cghb-border/50">
+                            {userRole !== ROLES.COMMISSIONER ? (
+                              <button onClick={() => handleDeleteDocument(doc.id)} className="text-red-500 hover:text-red-400 transition-colors p-1.5 rounded hover:bg-red-500/10" title="Remove Document">
+                                <Trash2 size={16} />
+                              </button>
+                            ) : (
+                              <span className="text-[var(--color-text-muted)]/30">-</span>
+                            )}
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+
+                    {/* Independent Document Builder Input Row (Enabled for everyone to allow endless adding) */}
+                    <InputRow onSave={handleAddDocument} />
+
+                  </tbody>
+                </table>
+              </div>
             </div>
 
           </motion.div>
