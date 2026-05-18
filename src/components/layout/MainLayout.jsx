@@ -6,6 +6,8 @@ import Sidebar from './Sidebar';
 const MainLayout = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // FIX 1: Standardized the name to isMobileMenuOpen & setIsMobileMenuOpen
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Sync theme with HTML class for Tailwind v4
@@ -16,7 +18,6 @@ const MainLayout = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
-// ... keep state logic ...
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-main)] flex flex-col">
@@ -28,7 +29,7 @@ const MainLayout = () => {
       />
       
       <div className="flex flex-1 relative">
-        {/* Updated Mobile Overlay - z-index is lower than Header (100) but higher than Sidebar (90) contents if needed */}
+        {/* Updated Mobile Overlay - z-index is lower than Header (100) but higher than Sidebar (90) */}
         {isMobileMenuOpen && (
           <div 
             className="fixed inset-0 bg-black/40 z-[80] lg:hidden backdrop-blur-[2px]"
@@ -40,6 +41,8 @@ const MainLayout = () => {
           isCollapsed={isCollapsed} 
           setIsCollapsed={setIsCollapsed}
           isMobileOpen={isMobileMenuOpen} 
+          // FIX 2: We pass the exact setter function down to the Sidebar!
+          setIsMobileOpen={setIsMobileMenuOpen}
         />
         
         <main className={`
@@ -55,5 +58,4 @@ const MainLayout = () => {
   );
 };
 
-// THIS IS THE LINE THAT WAS LIKELY MISSING:
 export default MainLayout;

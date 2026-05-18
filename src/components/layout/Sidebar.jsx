@@ -12,7 +12,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { ROLE_PERMISSIONS } from '../../utils/roles';
 
-const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
+// Note: Added setIsMobileOpen to props so we can control closing the mobile menu
+const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) => {
   const location = useLocation();
   const navigate = useNavigate(); 
   const { userRole } = useAuth();
@@ -33,6 +34,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
 
   const handleLogout = () => {
     navigate('/login'); 
+    handleMobileClose();
+  };
+
+  // Closes the sidebar ONLY if we are in mobile view
+  const handleMobileClose = () => {
+    if (isMobileOpen && typeof setIsMobileOpen === 'function') {
+      setIsMobileOpen(false);
+    }
   };
 
   return (
@@ -58,63 +67,67 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
         </button>
       </div>
 
-      {/* 2. NAVIGATION LINKS - REORDERED LOGICAL FLOW */}
+      {/* 2. NAVIGATION LINKS */}
       <nav className={`flex-1 px-4 space-y-1 overflow-x-hidden overflow-y-auto ${isMobileOpen ? 'pt-8' : 'pt-6'}`}>
         
         {hasAccess('dashboard') && (
-          <NavItem to="/dashboard" icon={<Home size={18} />} label="Dashboard" active={location.pathname === '/dashboard'} collapsed={isMobileOpen ? false : isCollapsed} />
+          <NavItem onClick={handleMobileClose} to="/dashboard" icon={<Home size={18} />} label="Dashboard" active={location.pathname === '/dashboard'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
         
         {hasAccess('create-project') && (
-          <NavItem to="/dashboard/create-project" icon={<FolderPlus size={18} />} label="Create Project" active={location.pathname === '/dashboard/create-project'} collapsed={isMobileOpen ? false : isCollapsed} />
+          <NavItem onClick={handleMobileClose} to="/dashboard/create-project" icon={<FolderPlus size={18} />} label="Create Project" active={location.pathname === '/dashboard/create-project'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
         {hasAccess('engineers') && (
-          <NavItem to="/dashboard/engineers" icon={<Users size={18} />} label="Engineers" active={location.pathname === '/dashboard/engineers'} collapsed={isMobileOpen ? false : isCollapsed} />
+          <NavItem onClick={handleMobileClose} to="/dashboard/engineers" icon={<Users size={18} />} label="Engineers" active={location.pathname === '/dashboard/engineers'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
-        {/* --- Administrative Approval (Moved Up) --- */}
+        {/* --- Administrative Approval --- */}
         {hasAccess('administrative-approval') && (
-          <NavItem to="/dashboard/administrative-approval" icon={<ClipboardCheck size={18} />} label="Administrative Approval" active={location.pathname === '/dashboard/administrative-approval'} collapsed={isMobileOpen ? false : isCollapsed} />
+          <NavItem onClick={handleMobileClose} to="/dashboard/administrative-approval" icon={<ClipboardCheck size={18} />} label="Administrative Approval" active={location.pathname === '/dashboard/administrative-approval'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
-        {/* --- Technical Sanction (Moved Up) --- */}
+        {/* --- Technical Sanction --- */}
         {hasAccess('technical-sanction') && (
-          <NavItem to="/dashboard/technical-sanction" icon={<FileCheck size={18} />} label="Technical Sanction" active={location.pathname === '/dashboard/technical-sanction'} collapsed={isMobileOpen ? false : isCollapsed} />
+          <NavItem onClick={handleMobileClose} to="/dashboard/technical-sanction" icon={<FileCheck size={18} />} label="Technical Sanction" active={location.pathname === '/dashboard/technical-sanction'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
-        {/* --- Tender & Dropdown (Moved Up & Reordered Inner Items) --- */}
+        {/* --- Tender & Dropdown --- */}
         {hasAccess('tender') && (
-          <NavAccordion icon={<ClipboardList size={18} />} label="Tender" collapsed={isMobileOpen ? false : isCollapsed} forceExpand={() => setIsCollapsed(false)} currentPath={location.pathname}
+          <NavAccordion 
+            icon={<ClipboardList size={18} />} label="Tender" collapsed={isMobileOpen ? false : isCollapsed} forceExpand={() => setIsCollapsed(false)} currentPath={location.pathname}
+            onLinkClick={handleMobileClose} // Pass close function to inner links
             items={[
               { label: 'NIT Approval', to: '/dashboard/tender/nit-approval' },
               { label: 'Advertisement', to: '/dashboard/tender/advertisement' },
               { label: 'Tender Rate Approval', to: '/dashboard/tender/rate-approval' },
               { label: 'Tender Agreement', to: '/dashboard/tender/agreement' },
-              { label: 'Tender Float', to: '/dashboard/tender/float' }, // Moved to bottom
+              { label: 'Tender Float', to: '/dashboard/tender/float' },
             ]}
           />
         )}
 
         {hasAccess('site-visit') && (
-          <NavItem to="/dashboard/site-visit" icon={<HardHat size={18} />} label="Site Visit" active={location.pathname === '/dashboard/site-visit'} collapsed={isMobileOpen ? false : isCollapsed} />
+          <NavItem onClick={handleMobileClose} to="/dashboard/site-visit" icon={<HardHat size={18} />} label="Site Visit" active={location.pathname === '/dashboard/site-visit'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
         {hasAccess('documentation') && (
-          <NavItem to="/dashboard/documentation" icon={<Files size={18} />} label="Documentation" active={location.pathname === '/dashboard/documentation'} collapsed={isMobileOpen ? false : isCollapsed} />
+          <NavItem onClick={handleMobileClose} to="/dashboard/documentation" icon={<Files size={18} />} label="Documentation" active={location.pathname === '/dashboard/documentation'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
-        {/* --- Schemes (Moved Down, Right Above Work Progress) --- */}
+        {/* --- Schemes --- */}
         {hasAccess('schemes') && (
-          <NavItem to="/dashboard/schemes" icon={<LayoutGrid size={18} />} label="Schemes" active={location.pathname === '/dashboard/schemes'} collapsed={isMobileOpen ? false : isCollapsed} />
+          <NavItem onClick={handleMobileClose} to="/dashboard/schemes" icon={<LayoutGrid size={18} />} label="Schemes" active={location.pathname === '/dashboard/schemes'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
         {hasAccess('work-progress') && (
-          <NavItem to="/dashboard/work-progress" icon={<Activity size={18} />} label="Work Progress" active={location.pathname === '/dashboard/work-progress'} collapsed={isMobileOpen ? false : isCollapsed} />
+          <NavItem onClick={handleMobileClose} to="/dashboard/work-progress" icon={<Activity size={18} />} label="Work Progress" active={location.pathname === '/dashboard/work-progress'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
         {hasAccess('reports') && (
-          <NavAccordion icon={<PieChart size={18} />} label="Reports" collapsed={isMobileOpen ? false : isCollapsed} forceExpand={() => setIsCollapsed(false)} currentPath={location.pathname}
+          <NavAccordion 
+            icon={<PieChart size={18} />} label="Reports" collapsed={isMobileOpen ? false : isCollapsed} forceExpand={() => setIsCollapsed(false)} currentPath={location.pathname}
+            onLinkClick={handleMobileClose} // Pass close function to inner links
             items={[
               { label: 'Site Reports', to: '/dashboard/reports/site' },
               { label: 'Financial Reports', to: '/dashboard/reports/financial' },
@@ -128,6 +141,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
       {/* 3. SETTINGS & LOGOUT */}
       <div className="p-4 border-t border-cghb-border mt-2 space-y-1">
         <NavItem 
+          onClick={handleMobileClose}
           to="/dashboard/settings" 
           icon={<Settings size={18} />} 
           label="Settings" 
@@ -159,9 +173,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
 };
 
 // --- SINGLE LINK COMPONENT ---
-const NavItem = ({ icon, label, to, active = false, collapsed = false }) => (
+// Note: added onClick prop
+const NavItem = ({ icon, label, to, active = false, collapsed = false, onClick }) => (
   <Link 
     to={to}
+    onClick={onClick}
     className={`
       flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all relative group overflow-hidden
       ${active 
@@ -180,7 +196,8 @@ const NavItem = ({ icon, label, to, active = false, collapsed = false }) => (
 );
 
 // --- ACCORDION COMPONENT FOR SUB-MENUS ---
-const NavAccordion = ({ icon, label, items, currentPath, collapsed, forceExpand }) => {
+// Note: added onLinkClick prop
+const NavAccordion = ({ icon, label, items, currentPath, collapsed, forceExpand, onLinkClick }) => {
   const isActive = items.some(item => currentPath === item.to);
   const [isOpen, setIsOpen] = useState(isActive);
 
@@ -237,6 +254,7 @@ const NavAccordion = ({ icon, label, items, currentPath, collapsed, forceExpand 
                 <Link
                   key={item.to}
                   to={item.to}
+                  onClick={onLinkClick} // Closes sidebar ONLY when a sub-item is clicked
                   className={`
                     block text-[12px] font-bold py-1.5 px-3 rounded-md transition-all
                     ${currentPath === item.to 
