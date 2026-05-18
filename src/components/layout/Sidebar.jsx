@@ -58,7 +58,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
         </button>
       </div>
 
-      {/* 2. NAVIGATION LINKS */}
+      {/* 2. NAVIGATION LINKS - REORDERED LOGICAL FLOW */}
       <nav className={`flex-1 px-4 space-y-1 overflow-x-hidden overflow-y-auto ${isMobileOpen ? 'pt-8' : 'pt-6'}`}>
         
         {hasAccess('dashboard') && (
@@ -72,15 +72,26 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
         {hasAccess('engineers') && (
           <NavItem to="/dashboard/engineers" icon={<Users size={18} />} label="Engineers" active={location.pathname === '/dashboard/engineers'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
-        
+
+        {/* --- Administrative Approval (Moved Up) --- */}
+        {hasAccess('administrative-approval') && (
+          <NavItem to="/dashboard/administrative-approval" icon={<ClipboardCheck size={18} />} label="Administrative Approval" active={location.pathname === '/dashboard/administrative-approval'} collapsed={isMobileOpen ? false : isCollapsed} />
+        )}
+
+        {/* --- Technical Sanction (Moved Up) --- */}
+        {hasAccess('technical-sanction') && (
+          <NavItem to="/dashboard/technical-sanction" icon={<FileCheck size={18} />} label="Technical Sanction" active={location.pathname === '/dashboard/technical-sanction'} collapsed={isMobileOpen ? false : isCollapsed} />
+        )}
+
+        {/* --- Tender & Dropdown (Moved Up & Reordered Inner Items) --- */}
         {hasAccess('tender') && (
           <NavAccordion icon={<ClipboardList size={18} />} label="Tender" collapsed={isMobileOpen ? false : isCollapsed} forceExpand={() => setIsCollapsed(false)} currentPath={location.pathname}
             items={[
               { label: 'NIT Approval', to: '/dashboard/tender/nit-approval' },
               { label: 'Advertisement', to: '/dashboard/tender/advertisement' },
-              { label: 'Tender Float', to: '/dashboard/tender/float' },
               { label: 'Tender Rate Approval', to: '/dashboard/tender/rate-approval' },
               { label: 'Tender Agreement', to: '/dashboard/tender/agreement' },
+              { label: 'Tender Float', to: '/dashboard/tender/float' }, // Moved to bottom
             ]}
           />
         )}
@@ -93,17 +104,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
           <NavItem to="/dashboard/documentation" icon={<Files size={18} />} label="Documentation" active={location.pathname === '/dashboard/documentation'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
+        {/* --- Schemes (Moved Down, Right Above Work Progress) --- */}
         {hasAccess('schemes') && (
           <NavItem to="/dashboard/schemes" icon={<LayoutGrid size={18} />} label="Schemes" active={location.pathname === '/dashboard/schemes'} collapsed={isMobileOpen ? false : isCollapsed} />
-        )}
-
-        {/* --- Administrative Approval --- */}
-        {hasAccess('administrative-approval') && (
-          <NavItem to="/dashboard/administrative-approval" icon={<ClipboardCheck size={18} />} label="Admin Approval" active={location.pathname === '/dashboard/administrative-approval'} collapsed={isMobileOpen ? false : isCollapsed} />
-        )}
-
-        {hasAccess('technical-sanction') && (
-          <NavItem to="/dashboard/technical-sanction" icon={<FileCheck size={18} />} label="Technical Sanction" active={location.pathname === '/dashboard/technical-sanction'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
         {hasAccess('work-progress') && (
