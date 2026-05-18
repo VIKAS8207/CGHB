@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Search, Filter, ChevronLeft, ChevronRight, 
-  X, MapPin, Save, Building2, Eye, Edit, Trash2, AlertCircle, Stamp, MoreVertical
+  X, MapPin, Save, Building2, Eye, Edit, Trash2, AlertCircle, Stamp, MoreVertical, LayoutList, ArrowLeft
 } from 'lucide-react';
 
 // Import Auth Tools
@@ -11,9 +11,9 @@ import { ROLES } from '../utils/roles';
 
 // Mock Data
 const initialProjects = [
-  { id: 'PRJ-1042', workType: 'Construction', sanctionYear: '2025-26', municipality: 'Raipur Nagar Nigam', ward: 'Ward 12', projectName: 'Atal Vihar Phase 2', agency: 'CGHB Urban', scheme: 'Atal Vihar Yojana', description: '50 LIG Houses', physicalStatus: 'In Progress', approvedBy: 'Board Resolution', lastModified: '12 May 2026', engineer: 'Rajesh Sharma' },
-  { id: 'PRJ-1043', workType: 'Development', sanctionYear: '2025-26', municipality: 'Arang Block', ward: 'GP Sector 3', projectName: 'Nava Raipur EWS Block C', agency: 'SUDA', scheme: 'EWS Housing', description: 'EWS Multi-story Block', physicalStatus: 'Tender Floated', approvedBy: 'State Government', lastModified: '10 May 2026', engineer: 'Priya Patel' },
-  { id: 'PRJ-1044', workType: 'Repair/Maintenance', sanctionYear: '2024-25', municipality: 'Bilaspur Nigam', ward: 'Ward 45', projectName: 'Bilaspur MIG Heights', agency: 'CGHB Urban', scheme: 'MIG Housing Dev', description: 'Boundary Wall Repair', physicalStatus: 'Completed', approvedBy: 'Chief Engineer TS', lastModified: '01 May 2026', engineer: 'Amit Kumar' },
+  { id: 'PRJ-1042', workType: 'Construction', sanctionYear: '2025-26', district: 'Raipur', city: 'Naya Raipur', ward: 'Ward 12', projectName: 'Atal Vihar Phase 2', agency: 'CGHB Urban', scheme: 'Atal Vihar Yojana', description: '50 LIG Houses', physicalStatus: 'In Progress', approvedBy: 'Board Resolution', lastModified: '12 May 2026', engineer: 'Rajesh Sharma', area: '45000', address: 'Sector 4, Phase 2 Grid' },
+  { id: 'PRJ-1043', workType: 'Development', sanctionYear: '2025-26', district: 'Raipur', city: 'Arang', ward: 'GP Sector 3', projectName: 'Nava Raipur EWS Block C', agency: 'SUDA', scheme: 'EWS Housing', description: 'EWS Multi-story Block', physicalStatus: 'Tender Floated', approvedBy: 'State Government', lastModified: '10 May 2026', engineer: 'Priya Patel', area: '120000', address: 'Block C Main Road' },
+  { id: 'PRJ-1044', workType: 'Repair/Maintenance', sanctionYear: '2024-25', district: 'Bilaspur', city: 'Bilaspur City', ward: 'Ward 45', projectName: 'Bilaspur MIG Heights', agency: 'CGHB Urban', scheme: 'MIG Housing Dev', description: 'Boundary Wall Repair', physicalStatus: 'Completed', approvedBy: 'Chief Engineer TS', lastModified: '01 May 2026', engineer: 'Amit Kumar', area: '15000', address: 'MIG Colony South' },
 ];
 
 const CreateProject = () => {
@@ -23,6 +23,7 @@ const CreateProject = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [viewingProject, setViewingProject] = useState(null); // State for the View Page
   
   // Track which 3-dot dropdown is currently open
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -33,7 +34,7 @@ const CreateProject = () => {
 
   // Form State
   const [formData, setFormData] = useState({
-    workType: '', sanctionYear: '', municipality: '', ward: '',
+    workType: '', sanctionYear: '', ward: '',
     projectName: '', agency: '', scheme: '', description: '', 
     physicalStatus: '', approvedBy: '', engineer: '', district: '', city: '', area: '', address: ''
   });
@@ -55,14 +56,16 @@ const CreateProject = () => {
       setProjects([newProject, ...projects]);
       setCurrentPage(1);
     }
-    setFormData({ workType: '', sanctionYear: '', municipality: '', ward: '', projectName: '', agency: '', scheme: '', description: '', physicalStatus: '', approvedBy: '', engineer: '', district: '', city: '', area: '', address: '' });
+    
+    // Reset Form
+    setFormData({ workType: '', sanctionYear: '', ward: '', projectName: '', agency: '', scheme: '', description: '', physicalStatus: '', approvedBy: '', engineer: '', district: '', city: '', area: '', address: '' });
     setIsFormOpen(false);
   };
 
   const handleEdit = (project) => {
     setEditingId(project.id);
     setFormData({
-      workType: project.workType || '', sanctionYear: project.sanctionYear || '', municipality: project.municipality || '', ward: project.ward || '',
+      workType: project.workType || '', sanctionYear: project.sanctionYear || '', ward: project.ward || '',
       projectName: project.projectName || '', agency: project.agency || '', scheme: project.scheme || '', description: project.description || '', 
       physicalStatus: project.physicalStatus || '', approvedBy: project.approvedBy || '', engineer: project.engineer || '', 
       district: project.district || '', city: project.city || '', area: project.area || '', address: project.address || ''
@@ -72,13 +75,14 @@ const CreateProject = () => {
   };
 
   const handleDelete = (id) => {
-    if(window.confirm("Are you sure you want to delete this project record?")) {
+    if(window.confirm("Are you sure you want to delete this project record? This action cannot be undone.")) {
       setProjects(projects.filter(p => p.id !== id));
     }
   };
 
-  const handleView = (name) => {
-    alert(`Opening Detailed View for ${name}`);
+  const handleView = (project) => {
+    setViewingProject(project);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Close dropdown when clicking anywhere else
@@ -91,7 +95,7 @@ const CreateProject = () => {
   // --- FILTER & SORT LOGIC ---
   const filteredProjects = projects.filter(p => 
     p.projectName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.municipality.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.district?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.agency.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -104,6 +108,126 @@ const CreateProject = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // ============================================================================
+  // PAGE 2: DETAILED VIEW PAGE (Renders instead of Dashboard if viewingProject is set)
+  // ============================================================================
+  if (viewingProject) {
+    return (
+      <div className="w-full max-w-[1400px] mx-auto animate-in fade-in slide-in-from-right-4 duration-300 font-sans relative z-10 space-y-6">
+        
+        {/* HEADER & BACK BUTTON */}
+        <div className="flex items-center gap-4 border-b border-cghb-border pb-6">
+          <button 
+            onClick={() => setViewingProject(null)} 
+            className="p-2.5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-cghb-border/20 transition-all shadow-sm"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-[var(--color-text-main)] uppercase">
+              Project <span className="text-cghb-yellow">Details</span>
+            </h1>
+            <p className="text-[13px] text-[var(--color-text-muted)] font-medium mt-1 flex items-center gap-2">
+              <LayoutList size={14} className="text-cghb-yellow" /> {viewingProject.projectName} <span className="opacity-50">|</span> {viewingProject.id}
+            </p>
+          </div>
+        </div>
+
+        {/* DETAILED CONTENT */}
+        <div className="glass-panel p-8 md:p-10 rounded-xl border border-cghb-border shadow-sm space-y-10">
+          
+          {/* Section 1: Overview */}
+          <div>
+            <h3 className="text-[12px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">1. Master Overview</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Work Type</span>
+                <span className="block text-[15px] font-black text-[var(--color-text-main)]">{viewingProject.workType || '-'}</span>
+              </div>
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Sanction Year</span>
+                <span className="block text-[15px] font-black text-[var(--color-text-main)]">{viewingProject.sanctionYear || '-'}</span>
+              </div>
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Total Area (Sq.Ft)</span>
+                <span className="block text-[15px] font-black text-[var(--color-text-main)]">{viewingProject.area ? `${viewingProject.area} Sq.Ft` : '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Location Details */}
+          <div>
+            <h3 className="text-[12px] font-black text-cghb-yellow uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">2. Location Data</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">District</span>
+                <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.district || '-'}</span>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">City / Town</span>
+                <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.city || '-'}</span>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">GP / Ward</span>
+                <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.ward || '-'}</span>
+              </div>
+              <div className="md:col-span-3 bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Precise Address</span>
+                <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.address || '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Execution Details */}
+          <div>
+            <h3 className="text-[12px] font-black text-blue-500 uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">3. Execution Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div>
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Agency</span>
+                <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.agency || '-'}</span>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Scheme</span>
+                <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.scheme || '-'}</span>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Lead Engineer</span>
+                <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.engineer || '-'}</span>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Approved By</span>
+                <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.approvedBy || '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: Status */}
+          <div>
+            <h3 className="text-[12px] font-black text-emerald-500 uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">4. Current Status</h3>
+            <div className="grid grid-cols-1 gap-6">
+              <div>
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Physical Status</span>
+                <span className="inline-block px-3 py-1.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-md text-[13px] font-bold">
+                  {viewingProject.physicalStatus || '-'}
+                </span>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Detailed Description</span>
+                <p className="text-[14px] font-medium text-[var(--color-text-main)] leading-relaxed bg-[var(--color-bg-main)] p-5 rounded-xl border border-cghb-border/50 shadow-sm">
+                  {viewingProject.description || 'No description provided.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // PAGE 1: MAIN DASHBOARD & DIRECTORY
+  // ============================================================================
   return (
     <div className="w-full max-w-[1400px] mx-auto animate-in fade-in duration-300 font-sans relative z-10 space-y-6">
       
@@ -187,8 +311,10 @@ const CreateProject = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   
-                  {/* Row 1: Basic Info */}
+                  {/* MASTER GRID: Perfectly symmetrical 4-column layout */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    
+                    {/* Row 1 */}
                     <div className="md:col-span-2">
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Project Name</label>
                       <input type="text" required placeholder="e.g., Atal Vihar Phase 2" value={formData.projectName} onChange={e => setFormData({...formData, projectName: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
@@ -201,30 +327,26 @@ const CreateProject = () => {
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Sanction Year</label>
                       <input type="text" required placeholder="e.g., 2025-26" value={formData.sanctionYear} onChange={e => setFormData({...formData, sanctionYear: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
                     </div>
-                  </div>
 
-                  {/* Row 2: Location Data */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    {/* Row 2 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">District</label>
                       <input type="text" placeholder="e.g., Raipur" value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Municipality / Block</label>
-                      <input type="text" required placeholder="e.g., Raipur Nagar Nigam" value={formData.municipality} onChange={e => setFormData({...formData, municipality: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
+                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">City/Town</label>
+                      <input type="text" placeholder="e.g., Naya Raipur" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">GP / Ward Name</label>
                       <input type="text" required placeholder="e.g., Ward 12" value={formData.ward} onChange={e => setFormData({...formData, ward: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">City/Town</label>
-                      <input type="text" placeholder="e.g., Naya Raipur" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
+                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Total Area (Sq. Ft.)</label>
+                      <input type="number" placeholder="e.g., 45000" value={formData.area} onChange={e => setFormData({...formData, area: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
                     </div>
-                  </div>
 
-                  {/* Row 3: Execution details */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    {/* Row 3 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Executing Agency</label>
                       <input type="text" required placeholder="e.g., CGHB Urban" value={formData.agency} onChange={e => setFormData({...formData, agency: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
@@ -251,30 +373,25 @@ const CreateProject = () => {
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Approved By</label>
-                      <input type="text" required placeholder="e.g., Board Resolution" value={formData.approvedBy} onChange={e => setFormData({...formData, approvedBy: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
+                      <input type="text" required placeholder="e.g., Board Res." value={formData.approvedBy} onChange={e => setFormData({...formData, approvedBy: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
                     </div>
-                  </div>
 
-                  {/* Row 4: Status and Descriptions */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-                    <div>
-                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Total Area (Sq. Ft.)</label>
-                      <input type="number" placeholder="e.g., 45000" value={formData.area} onChange={e => setFormData({...formData, area: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
-                    </div>
+                    {/* Row 4 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Physical Status</label>
                       <input type="text" required placeholder="e.g., In Progress" value={formData.physicalStatus} onChange={e => setFormData({...formData, physicalStatus: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="md:col-span-3">
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Work Description</label>
                       <input type="text" required placeholder="e.g., Construction of 50 LIG Houses" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
                     </div>
-                  </div>
 
-                  {/* Row 5: Full Width Address */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Precise Site Address</label>
-                    <input type="text" placeholder="Enter exact grid coordinates or address..." value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
+                    {/* Row 5 */}
+                    <div className="md:col-span-4">
+                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Precise Site Address</label>
+                      <input type="text" placeholder="Enter exact grid coordinates or address..." value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
+                    </div>
+
                   </div>
                   
                   <div className="flex justify-end pt-4 border-t border-cghb-border/50">
@@ -293,36 +410,27 @@ const CreateProject = () => {
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={14} />
-          <input type="text" placeholder="Search projects, municipalities, or agencies..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full h-10 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg pl-10 pr-4 text-[13px] text-[var(--color-text-main)] focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
+          <input type="text" placeholder="Search projects, districts, or agencies..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full h-10 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg pl-10 pr-4 text-[13px] text-[var(--color-text-main)] focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
         </div>
         <button className="flex items-center gap-2 h-10 px-5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[13px] font-bold text-[var(--color-text-main)] shadow-sm hover:border-[var(--color-text-muted)] transition-all">
           <Filter size={14} /> Filter
         </button>
       </div>
 
-      {/* --- DATA TABLE (MODERN & PROFESSIONAL) --- */}
-      {/* 
-        Key Changes: 
-        1. rounded-xl outer wrapper with shadow
-        2. removed border-collapse and border-x from cells to look cleaner
-        3. table-fixed prevents horizontal scroll
-        4. No hover effects on rows (bg-transparent strictly maintained) 
-      */}
+      {/* --- DATA TABLE --- */}
       <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden">
-        <div className="w-full">
-          <table className="w-full table-fixed text-left whitespace-nowrap">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full table-fixed text-left whitespace-nowrap min-w-[1200px]">
             <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
               <tr>
-                {/* Widths finely tuned to equal 100% without overflowing */}
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[4%]">S.No</th>
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Work Type</th>
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[6%]">Sanc. Yr</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Municipality</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">GP/Ward</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%]">Project Name</th>
+                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">District</th>
+                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[17%]">Project Name</th>
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Agency</th>
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Scheme</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Description</th>
+                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[13%]">Description</th>
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Status</th>
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[9%]">Approved By</th>
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[5%]">Modified</th>
@@ -332,13 +440,11 @@ const CreateProject = () => {
             <tbody>
               <AnimatePresence>
                 {currentProjects.map((project, index) => (
-                  // STRICTLY NO HOVER STYLES HERE
-                  <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={project.id} className="bg-transparent border-b border-cghb-border/50 last:border-0">
+                  <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={project.id} className="bg-transparent border-b border-cghb-border/50 hover:bg-cghb-border/5 transition-colors">
                     <td className="px-3 py-3.5 text-center text-[11px] font-bold text-[var(--color-text-muted)] truncate" title={indexOfFirstItem + index + 1}>{indexOfFirstItem + index + 1}</td>
                     <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.workType}>{project.workType}</td>
                     <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.sanctionYear}>{project.sanctionYear}</td>
-                    <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.municipality}>{project.municipality}</td>
-                    <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.ward}>{project.ward}</td>
+                    <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.district}>{project.district}</td>
                     <td className="px-3 py-3.5 text-[12px] font-bold text-[var(--color-text-main)] truncate" title={project.projectName}>{project.projectName}</td>
                     <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.agency}>{project.agency}</td>
                     <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.scheme}>{project.scheme}</td>
@@ -348,7 +454,7 @@ const CreateProject = () => {
                     <td className="px-3 py-3.5 text-[10px] font-medium text-[var(--color-text-muted)] truncate" title={project.lastModified}>{project.lastModified}</td>
                     
                     {/* Actions: 3 Dots Dropdown */}
-                    <td className="px-3 py-3.5 text-center relative">
+                    <td className="px-3 py-3.5 text-center relative border-l border-cghb-border/50">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation(); 
@@ -361,7 +467,7 @@ const CreateProject = () => {
                       
                       {activeDropdown === project.id && (
                         <div className="absolute right-8 top-6 w-32 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-xl z-50 flex flex-col py-1.5 text-left">
-                          <button onClick={() => { handleView(project.projectName); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
+                          <button onClick={() => { handleView(project); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
                             <Eye size={14} /> View
                           </button>
                           {userRole !== ROLES.COMMISSIONER && (
@@ -410,7 +516,6 @@ const CreateProject = () => {
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -2,20 +2,20 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   UserPlus, Search, Filter, ChevronLeft, ChevronRight, 
-  X, Phone, Mail, UserCog, Save, Building2, Eye, Edit, 
-  Trash2, AlertCircle, MoreVertical, MapPin, Stamp 
+  X, Phone, Mail, UserCog, Save, Eye, Edit, 
+  Trash2, AlertCircle, MoreVertical, MapPin, Stamp, ArrowLeft, Briefcase
 } from 'lucide-react';
 
 // Import Auth Tools
 import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../utils/roles';
 
-// Mock Data updated to flat structure (no sub-fields, no status)
+// Mock Data (Primary Zone removed)
 const initialEngineers = [
-  { id: 'EMP-8021', name: 'Rajesh Sharma', role: 'Civil Engineer', phone: '+91 98765 43210', email: 'rajesh.s@cghb.gov.in', zone: 'Raipur South' },
-  { id: 'EMP-8022', name: 'Priya Patel', role: 'Structural Lead', phone: '+91 98765 43211', email: 'priya.p@cghb.gov.in', zone: 'Nava Raipur' },
-  { id: 'EMP-8034', name: 'Amit Kumar', role: 'Site Supervisor', phone: '+91 98765 43212', email: 'amit.k@cghb.gov.in', zone: 'Bilaspur' },
-  { id: 'EMP-8045', name: 'Suresh Iyer', role: 'Electrical Engineer', phone: '+91 98765 43213', email: 'suresh.i@cghb.gov.in', zone: 'Durg' },
+  { id: 'EMP-8021', name: 'Rajesh Sharma', role: 'Civil Engineer', phone: '+91 98765 43210', email: 'rajesh.s@cghb.gov.in' },
+  { id: 'EMP-8022', name: 'Priya Patel', role: 'Structural Lead', phone: '+91 98765 43211', email: 'priya.p@cghb.gov.in' },
+  { id: 'EMP-8034', name: 'Amit Kumar', role: 'Site Supervisor', phone: '+91 98765 43212', email: 'amit.k@cghb.gov.in' },
+  { id: 'EMP-8045', name: 'Suresh Iyer', role: 'Electrical Engineer', phone: '+91 98765 43213', email: 'suresh.i@cghb.gov.in' },
 ];
 
 const Engineers = () => {
@@ -25,6 +25,7 @@ const Engineers = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [viewingEngineer, setViewingEngineer] = useState(null); // State for the View Page
   
   // Track which 3-dot dropdown is currently open
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -33,9 +34,9 @@ const Engineers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5; 
 
-  // Form State
+  // Form State (Zone removed)
   const [formData, setFormData] = useState({
-    empId: '', name: '', role: '', phone: '', email: '', zone: ''
+    empId: '', name: '', role: '', phone: '', email: ''
   });
 
   // --- ACTIONS ---
@@ -49,14 +50,14 @@ const Engineers = () => {
       setEngineers([newEngineer, ...engineers]);
       setCurrentPage(1);
     }
-    setFormData({ empId: '', name: '', role: '', phone: '', email: '', zone: '' });
+    setFormData({ empId: '', name: '', role: '', phone: '', email: '' });
     setIsFormOpen(false);
   };
 
   const handleEdit = (eng) => {
     setEditingId(eng.id);
     setFormData({
-      empId: eng.id, name: eng.name, role: eng.role, phone: eng.phone, email: eng.email, zone: eng.zone
+      empId: eng.id, name: eng.name, role: eng.role, phone: eng.phone, email: eng.email
     });
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -68,8 +69,9 @@ const Engineers = () => {
     }
   };
 
-  const handleView = (name) => {
-    alert(`Opening Detailed Profile for ${name}`);
+  const handleView = (eng) => {
+    setViewingEngineer(eng);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Close dropdown when clicking anywhere else
@@ -83,7 +85,7 @@ const Engineers = () => {
   const filteredEngineers = engineers.filter(eng => 
     eng.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     eng.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    eng.zone.toLowerCase().includes(searchTerm.toLowerCase())
+    eng.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sortedEngineers = [...filteredEngineers].sort((a, b) => a.name.localeCompare(b.name));
@@ -95,6 +97,87 @@ const Engineers = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+
+  // ============================================================================
+  // PAGE 2: DETAILED VIEW PAGE (Renders instead of Directory if viewingEngineer is set)
+  // ============================================================================
+  if (viewingEngineer) {
+    return (
+      <div className="w-full max-w-[1400px] mx-auto animate-in fade-in slide-in-from-right-4 duration-300 font-sans relative z-10 space-y-6">
+        
+        {/* HEADER & BACK BUTTON */}
+        <div className="flex items-center gap-4 border-b border-cghb-border pb-6">
+          <button 
+            onClick={() => setViewingEngineer(null)} 
+            className="p-2.5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-cghb-border/20 transition-all shadow-sm"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-[var(--color-text-main)] uppercase">
+              Personnel <span className="text-cghb-yellow">Profile</span>
+            </h1>
+            <p className="text-[13px] text-[var(--color-text-muted)] font-medium mt-1 flex items-center gap-2">
+              <UserCog size={14} className="text-cghb-yellow" /> {viewingEngineer.name} <span className="opacity-50">|</span> {viewingEngineer.id}
+            </p>
+          </div>
+        </div>
+
+        {/* DETAILED CONTENT */}
+        <div className="glass-panel p-8 md:p-10 rounded-xl border border-cghb-border shadow-sm space-y-10">
+          
+          {/* Section 1: Professional Identity */}
+          <div>
+            <h3 className="text-[12px] font-black text-cghb-yellow uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">1. Professional Identity</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Full Name</span>
+                <span className="block text-[15px] font-black text-[var(--color-text-main)]">{viewingEngineer.name || '-'}</span>
+              </div>
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Employee ID</span>
+                <span className="block text-[15px] font-mono font-black text-[var(--color-text-main)]">{viewingEngineer.id || '-'}</span>
+              </div>
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Specialization</span>
+                <span className="block text-[15px] font-black text-[var(--color-text-main)]">{viewingEngineer.role || '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Contact Information */}
+          <div>
+            <h3 className="text-[12px] font-black text-blue-500 uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">2. Contact Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center gap-4 bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm">
+                <div className="w-10 h-10 bg-blue-500/10 text-blue-500 flex items-center justify-center rounded-lg shrink-0">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Contact Number</span>
+                  <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingEngineer.phone || '-'}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm">
+                <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 flex items-center justify-center rounded-lg shrink-0">
+                  <Mail size={18} />
+                </div>
+                <div>
+                  <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Official Email</span>
+                  <span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingEngineer.email || '-'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // PAGE 1: MAIN DIRECTORY & FORM
+  // ============================================================================
   return (
     <div className="w-full max-w-[1400px] mx-auto animate-in fade-in duration-300 font-sans relative z-10 space-y-6">
       
@@ -136,13 +219,13 @@ const Engineers = () => {
         </div>
         <div className="glass-panel p-5 rounded-xl border-t-4 border-t-blue-500 flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Active Zones Covered</p>
+            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Specializations Covered</p>
             <h3 className="text-3xl font-black text-[var(--color-text-main)]">
-              {new Set(engineers.map(e => e.zone)).size}
+              {new Set(engineers.map(e => e.role)).size}
             </h3>
           </div>
           <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center">
-            <Building2 size={24} />
+            <Briefcase size={24} />
           </div>
         </div>
         <div className="glass-panel p-5 rounded-xl border-t-4 border-t-emerald-500 flex items-center justify-between">
@@ -180,6 +263,7 @@ const Engineers = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Symmetrical Form Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Full Name</label>
@@ -199,24 +283,15 @@ const Engineers = () => {
                         <option value="Site Supervisor" className="text-black">Site Supervisor</option>
                       </select>
                     </div>
+                    
+                    {/* Row 2 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Contact Number</label>
                       <input type="tel" required placeholder="+91 90000 00000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Official Email</label>
                       <input type="email" required placeholder="name@cghb.gov.in" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Primary Zone</label>
-                      <select required value={formData.zone} onChange={e => setFormData({...formData, zone: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow focus:ring-1 focus:ring-cghb-yellow transition-all shadow-sm cursor-pointer">
-                        <option value="" disabled>Select Zone...</option>
-                        <option value="Raipur North" className="text-black">Raipur North</option>
-                        <option value="Raipur South" className="text-black">Raipur South</option>
-                        <option value="Nava Raipur" className="text-black">Nava Raipur</option>
-                        <option value="Bilaspur" className="text-black">Bilaspur</option>
-                        <option value="Durg" className="text-black">Durg</option>
-                      </select>
                     </div>
                   </div>
                   
@@ -236,7 +311,7 @@ const Engineers = () => {
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={14} />
-          <input type="text" placeholder="Search personnel by name, ID, or zone..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full h-10 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg pl-10 pr-4 text-[13px] text-[var(--color-text-main)] focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
+          <input type="text" placeholder="Search personnel by name, ID, or specialization..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full h-10 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg pl-10 pr-4 text-[13px] text-[var(--color-text-main)] focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
         </div>
         <button className="flex items-center gap-2 h-10 px-5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[13px] font-bold text-[var(--color-text-main)] shadow-sm hover:border-[var(--color-text-muted)] transition-all">
           <Filter size={14} /> Filter
@@ -245,32 +320,29 @@ const Engineers = () => {
 
       {/* --- DATA TABLE (MODERN & PROFESSIONAL) --- */}
       <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden">
-        <div className="w-full">
-          <table className="w-full table-fixed text-left whitespace-nowrap">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full table-fixed text-left whitespace-nowrap min-w-[1000px]">
             <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
               <tr>
-                {/* Widths explicitly defined to 100% */}
                 <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">S.No</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%]">Emp ID</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[22%]">Full Name</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[16%]">Specialization</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[14%]">Phone</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[20%]">Email</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%]">Assigned Zone</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[15%]">Emp ID</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[25%]">Full Name</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[20%]">Specialization</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[15%]">Phone</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[15%]">Email</th>
                 <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">Action</th>
               </tr>
             </thead>
             <tbody>
               <AnimatePresence>
                 {currentEngineers.map((eng, index) => (
-                  <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={eng.id} className="bg-transparent border-b border-cghb-border/50 last:border-0">
+                  <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={eng.id} className="bg-transparent border-b border-cghb-border/50 last:border-0 hover:bg-cghb-border/5 transition-colors">
                     <td className="px-4 py-4 text-center text-[12px] font-bold text-[var(--color-text-muted)] truncate" title={indexOfFirstItem + index + 1}>{indexOfFirstItem + index + 1}</td>
                     <td className="px-4 py-4 font-mono text-[12px] font-bold text-[var(--color-text-main)] truncate" title={eng.id}>{eng.id}</td>
                     <td className="px-4 py-4 text-[13px] font-bold text-[var(--color-text-main)] truncate" title={eng.name}>{eng.name}</td>
                     <td className="px-4 py-4 text-[12px] font-medium text-[var(--color-text-main)] truncate" title={eng.role}>{eng.role}</td>
                     <td className="px-4 py-4 text-[12px] font-medium text-[var(--color-text-main)] truncate" title={eng.phone}>{eng.phone}</td>
                     <td className="px-4 py-4 text-[12px] font-medium text-[var(--color-text-main)] truncate" title={eng.email}>{eng.email}</td>
-                    <td className="px-4 py-4 text-[12px] font-medium text-[var(--color-text-main)] truncate" title={eng.zone}>{eng.zone}</td>
                     
                     {/* Actions: 3 Dots Dropdown */}
                     <td className="px-4 py-4 text-center relative border-l border-cghb-border/50">
@@ -286,7 +358,7 @@ const Engineers = () => {
                       
                       {activeDropdown === eng.id && (
                         <div className="absolute right-8 top-6 w-32 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-xl z-50 flex flex-col py-1.5 text-left">
-                          <button onClick={() => { handleView(eng.name); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
+                          <button onClick={() => { handleView(eng); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
                             <Eye size={14} /> View Profile
                           </button>
                           {userRole !== ROLES.COMMISSIONER && (
