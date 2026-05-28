@@ -20,10 +20,13 @@ const mockProjects = [
 ];
 
 const SiteVisit = () => {
-  const { userRole } = useAuth(); // If needed for access control later
+  const { userRole, user } = useAuth(); 
+
+  // Auto-fill the district based on the assigned engineer's profile (Mocked to 'raipur' for now)
+  const assignedDistrict = user?.district || 'raipur';
+  const assignedDistrictName = mockProjects.find(p => p.district === assignedDistrict)?.districtName || 'Raipur';
 
   // State for the Top Form (Quick Select)
-  const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
   
   // State for Navigation: null means we are on Page 1. If it has data, we are on Page 2.
@@ -58,11 +61,17 @@ const SiteVisit = () => {
   useEffect(() => {
     const handleClickOutside = () => setActiveDropdown(null);
     document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    // Add scroll listener to prevent floating dropdowns
+    window.addEventListener("scroll", handleClickOutside, true); 
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+      window.removeEventListener("scroll", handleClickOutside, true);
+    };
   }, []);
 
   // --- FILTERS & PAGINATION ---
-  const filteredProjectsForDropdown = mockProjects.filter(p => p.district === selectedDistrict);
+  // The dropdown ONLY shows projects assigned to the engineer's specific district
+  const filteredProjectsForDropdown = mockProjects.filter(p => p.district === assignedDistrict);
 
   const searchResults = mockProjects.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -114,31 +123,25 @@ const SiteVisit = () => {
 
               <form onSubmit={handleQuickSelectSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end relative z-10">
                 <div>
-                  <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5">1. Filter District</label>
-                  <select 
-                    value={selectedDistrict}
-                    onChange={(e) => { setSelectedDistrict(e.target.value); setSelectedProjectId(''); }}
-                    className="w-full h-10 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-3 focus:outline-none focus:border-cghb-yellow transition-colors cursor-pointer font-medium shadow-sm"
-                  >
-                    <option value="" disabled>All Districts...</option>
-                    <option value="raipur" className="text-black bg-white">Raipur</option>
-                    <option value="bilaspur" className="text-black bg-white">Bilaspur</option>
-                    <option value="bastar" className="text-black bg-white">Bastar</option>
-                    <option value="durg" className="text-black bg-white">Durg</option>
-                  </select>
+                  <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <MapPin size={14} /> 1. Assigned District
+                  </label>
+                  {/* Read-only field showing assigned district */}
+                  <div className="w-full h-11 md:h-10 bg-[var(--color-bg-main)] border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 flex items-center font-bold opacity-70 cursor-not-allowed shadow-inner">
+                    {assignedDistrictName}
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5">2. Target Project</label>
+                  <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Building2 size={14} /> 2. Target Project
+                  </label>
                   <select 
                     required 
                     value={selectedProjectId}
                     onChange={(e) => setSelectedProjectId(e.target.value)}
-                    disabled={!selectedDistrict}
-                    className="w-full h-10 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-3 focus:outline-none focus:border-cghb-yellow transition-colors cursor-pointer font-medium disabled:opacity-50 shadow-sm"
+                    className="w-full h-11 md:h-10 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-3 focus:outline-none focus:border-cghb-yellow transition-colors cursor-pointer font-medium shadow-sm"
                   >
-                    <option value="" disabled>
-                      {selectedDistrict ? "Select Project..." : "Select District First"}
-                    </option>
+                    <option value="" disabled>Select Project...</option>
                     {filteredProjectsForDropdown.map(project => (
                       <option key={project.id} value={project.id} className="text-black bg-white">
                         {project.name}
@@ -150,7 +153,7 @@ const SiteVisit = () => {
                   <button 
                     type="submit" 
                     disabled={!selectedProjectId}
-                    className="w-full flex items-center justify-center gap-2 bg-cghb-yellow text-black text-[13px] font-bold uppercase tracking-wider h-10 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className="w-full flex items-center justify-center gap-2 bg-cghb-yellow text-black text-[13px] font-bold uppercase tracking-wider h-11 md:h-10 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     Access Site Data <ArrowRight size={14} />
                   </button>
@@ -162,17 +165,16 @@ const SiteVisit = () => {
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={14} />
-                <input type="text" placeholder="Search Master Repository..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full h-10 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg pl-10 pr-4 text-[13px] text-[var(--color-text-main)] focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
+                <input type="text" placeholder="Search Master Repository..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full h-11 md:h-10 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg pl-10 pr-4 text-[13px] text-[var(--color-text-main)] focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
               </div>
-              <button className="flex items-center gap-2 h-10 px-5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[13px] font-bold text-[var(--color-text-main)] shadow-sm hover:border-[var(--color-text-muted)] transition-all">
+              <button className="flex items-center justify-center gap-2 h-11 md:h-10 px-5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[13px] font-bold text-[var(--color-text-main)] shadow-sm hover:border-[var(--color-text-muted)] transition-all">
                 <Filter size={14} /> Filter
               </button>
             </div>
 
-            <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden">
-              <div className="w-full">
-                {/* STRICT FIXED TABLE UI */}
-                <table className="w-full table-fixed text-left whitespace-nowrap">
+            <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden relative">
+              <div className="w-full overflow-x-auto">
+                <table className="w-full table-fixed text-left whitespace-nowrap min-w-[1000px]">
                   <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
                     <tr>
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">S.No</th>
@@ -184,11 +186,11 @@ const SiteVisit = () => {
                       <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[10%] border-l border-cghb-border">Action</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-cghb-border/50">
                     <AnimatePresence>
                       {currentProjects.map((project, index) => (
-                        <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={project.id} className="bg-transparent border-b border-cghb-border/50 last:border-0">
-                          <td className="px-3 py-4 text-center text-[11px] font-bold text-[var(--color-text-muted)] truncate" title={indexOfFirstItem + index + 1}>{indexOfFirstItem + index + 1}</td>
+                        <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={project.id} className="bg-transparent hover:bg-cghb-border/5 transition-colors">
+                          <td className="px-3 py-4 text-center text-[11px] font-bold text-[var(--color-text-muted)] truncate">{indexOfFirstItem + index + 1}</td>
                           <td className="px-3 py-4 font-mono text-[11px] font-bold text-[var(--color-text-main)] truncate" title={project.id}>{project.id}</td>
                           <td className="px-3 py-4 text-[12px] font-bold text-[var(--color-text-main)] truncate" title={project.name}>{project.name}</td>
                           
@@ -199,30 +201,31 @@ const SiteVisit = () => {
                           <td className="px-3 py-4 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.scheme}>{project.scheme}</td>
                           
                           <td className="px-3 py-4 text-center">
-                            <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="px-2 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider">
                               {project.reportsFiled} Filed
                             </span>
                           </td>
 
                           {/* Actions: 3 Dots Dropdown */}
-                          <td className="px-3 py-4 text-center relative border-l border-cghb-border/50">
+                          <td className="px-3 py-4 text-center border-l border-cghb-border/50">
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation(); 
-                                setActiveDropdown(activeDropdown === project.id ? null : project.id);
+                                if (activeDropdown === project.id) {
+                                  setActiveDropdown(null);
+                                } else {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setActiveDropdown({
+                                    id: project.id,
+                                    top: rect.bottom + 4,
+                                    left: rect.left - 130 
+                                  });
+                                }
                               }} 
-                              className="text-[var(--color-text-muted)] outline-none hover:text-[var(--color-text-main)]"
+                              className="text-[var(--color-text-muted)] outline-none hover:text-[var(--color-text-main)] p-1 rounded transition-colors hover:bg-cghb-border/20"
                             >
                               <MoreVertical size={16} />
                             </button>
-                            
-                            {activeDropdown === project.id && (
-                              <div className="absolute right-8 top-6 w-32 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-xl z-50 flex flex-col py-1.5 text-left">
-                                <button onClick={() => { handleTableAction(project); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
-                                  <Eye size={14} /> Open Site
-                                </button>
-                              </div>
-                            )}
                           </td>
                         </motion.tr>
                       ))}
@@ -239,7 +242,7 @@ const SiteVisit = () => {
               </div>
 
               {/* --- ALWAYS VISIBLE PAGINATION --- */}
-              <div className="border-t border-cghb-border px-5 py-4 flex items-center justify-between bg-[var(--color-bg-surface)]">
+              <div className="border-t border-cghb-border px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[var(--color-bg-surface)]">
                 <span className="text-[12px] text-[var(--color-text-muted)] font-medium">
                   Viewing <strong className="text-[var(--color-text-main)]">{searchResults.length === 0 ? 0 : indexOfFirstItem + 1}-{Math.min(indexOfLastItem, searchResults.length)}</strong> of <strong className="text-[var(--color-text-main)]">{searchResults.length}</strong>
                 </span>
@@ -277,9 +280,9 @@ const SiteVisit = () => {
             <div className="flex items-center gap-4 border-b border-cghb-border pb-6">
               <button 
                 onClick={handleBack}
-                className="p-2 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-cghb-border/20 transition-all shadow-sm"
+                className="p-2.5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-cghb-border/20 transition-all shadow-sm"
               >
-                <ArrowLeft size={16} />
+                <ArrowLeft size={20} />
               </button>
               <div>
                 <h1 className="text-2xl font-black tracking-tight text-[var(--color-text-main)] uppercase">
@@ -343,6 +346,27 @@ const SiteVisit = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* --- GLOBAL FIXED DROPDOWN MENU --- */}
+      <AnimatePresence>
+        {activeDropdown && (() => {
+          const project = mockProjects.find(p => p.id === activeDropdown.id);
+          if (!project) return null;
+          return (
+            <motion.div 
+              initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}
+              style={{ position: 'fixed', top: activeDropdown.top, left: activeDropdown.left, zIndex: 9999 }}
+              className="w-36 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-2xl flex flex-col py-1.5 text-left"
+              onClick={(e) => e.stopPropagation()} 
+            >
+              <button onClick={() => { handleTableAction(project); setActiveDropdown(null); }} className="px-4 py-3 md:py-2.5 text-[13px] md:text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
+                <Eye size={14} /> Open Site
+              </button>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Building2, Calendar, Camera, UploadCloud, 
   Save, Check, Image as ImageIcon, Search, Filter,
-  ChevronLeft, ChevronRight, MapPin, Clock, X, AlertCircle
+  ChevronLeft, ChevronRight, MapPin, Clock, X, AlertCircle, Percent
 } from 'lucide-react';
 
 // Import Auth Tools
@@ -21,8 +21,8 @@ const mockProjects = [
 ];
 
 const initialUpdates = [
-  { id: 'UPD-001', projectId: 'PRJ-1042', date: '10 May 2026', time: '14:30', description: 'Foundation laying completed for Block A. Excavation for Block B has started.', image: 'foundation.jpg', reporter: 'Vikram Singh' },
-  { id: 'UPD-002', projectId: 'PRJ-1042', date: '03 May 2026', time: '09:15', description: 'Site cleared and leveled. Raw materials for foundation arrived.', image: 'site_clear.jpg', reporter: 'Vikram Singh' },
+  { id: 'UPD-001', projectId: 'PRJ-1042', date: '10 May 2026', time: '14:30', description: 'Foundation laying completed for Block A. Excavation for Block B has started.', progress: 15, image: 'foundation.jpg', reporter: 'Vikram Singh' },
+  { id: 'UPD-002', projectId: 'PRJ-1042', date: '03 May 2026', time: '09:15', description: 'Site cleared and leveled. Raw materials for foundation arrived.', progress: 5, image: 'site_clear.jpg', reporter: 'Vikram Singh' },
 ];
 
 const WeeklyUpdate = () => {
@@ -32,11 +32,19 @@ const WeeklyUpdate = () => {
 
   const activeProject = mockProjects.find(p => p.id === id) || mockProjects[0];
 
+  // Base state for updates
   const [updates, setUpdates] = useState(initialUpdates.filter(u => u.projectId === activeProject.id));
+  
+  // Calculate the most recent progress percentage to lock the slider baseline
+  const latestProgress = updates.length > 0 ? updates[0].progress : 0;
+
   const [searchTerm, setSearchTerm] = useState('');
   const [currentDateTime, setCurrentDateTime] = useState({ date: '', time: '' });
 
+  // Form State
   const [description, setDescription] = useState('');
+  // Automatically start the slider at the previously completed progress mark
+  const [progressValue, setProgressValue] = useState(latestProgress); 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
@@ -88,12 +96,18 @@ const WeeklyUpdate = () => {
       date: currentDateTime.date,
       time: currentDateTime.time,
       description: description,
+      progress: progressValue, // Save current slider position
       image: imageFile.name,
       reporter: user?.name || 'Authorized Personnel'
     };
 
+    // Prepend the new update to the list so it stays chronological
     setUpdates([newUpdate, ...updates]);
     setDescription('');
+    
+    // We intentionally DO NOT reset progressValue to 0 here. 
+    // It stays at its current value so the engineer builds upon it next week!
+    
     setImageFile(null);
     setImagePreview(null);
     setCurrentPage(1);
@@ -112,7 +126,6 @@ const WeeklyUpdate = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // FIX: Determine how many columns to use based on the user role
   const isCommissioner = userRole === ROLES.COMMISSIONER;
 
   return (
@@ -135,7 +148,6 @@ const WeeklyUpdate = () => {
         </div>
       </div>
 
-      {/* DYNAMIC GRID: lg:grid-cols-3 for Engineers (with form), lg:grid-cols-1 for Commissioner (full width list) */}
       <div className={`grid grid-cols-1 ${isCommissioner ? 'lg:grid-cols-1' : 'lg:grid-cols-3'} gap-6 items-start`}>
         
         {/* LEFT COLUMN: UPLOAD FORM (Only visible to non-commissioners) */}
@@ -151,7 +163,9 @@ const WeeklyUpdate = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {/* Image Upload Area */}
               <div>
                 <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Site Photograph</label>
                 <div onClick={handleImageClick} className={`w-full aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group ${imagePreview ? 'border-emerald-500/50 bg-black/20' : 'border-cghb-border bg-[var(--color-bg-surface)] hover:border-cghb-yellow hover:bg-cghb-border/10'}`}>
@@ -178,10 +192,43 @@ const WeeklyUpdate = () => {
                   </AnimatePresence>
                 </div>
               </div>
+
+              {/* Advanced Progress Slider Area */}
+              <div className="bg-[var(--color-bg-surface)] p-4 rounded-xl border border-cghb-border/50">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                    <Percent size={14} className="text-cghb-yellow" /> Overall Progress
+                  </label>
+                  <span className="text-[16px] font-black text-cghb-yellow">{progressValue}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  value={progressValue} 
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    // Prevent the slider from dropping below the previously saved progress!
+                    if (val >= latestProgress) {
+                      setProgressValue(val);
+                    }
+                  }}
+                  className="w-full h-2 bg-cghb-border rounded-lg appearance-none cursor-pointer accent-cghb-yellow"
+                  style={{ accentColor: '#F58634' }}
+                />
+                <div className="flex justify-between text-[10px] font-bold text-[var(--color-text-muted)] mt-1.5">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+
+              {/* Description Area */}
               <div>
                 <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Progress Description</label>
-                <textarea required rows="4" placeholder="Describe the structural progress..." value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-xl p-3 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm resize-none" />
+                <textarea required rows="3" placeholder="Describe what was accomplished this week..." value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-xl p-3 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm resize-none" />
               </div>
+
               <div className="pt-2">
                 <button type="submit" disabled={!imageFile || !description.trim()} className="w-full flex items-center justify-center gap-2 bg-cghb-yellow text-black text-[13px] font-bold uppercase tracking-wider h-11 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
                   <Save size={16}/> Record Progress
@@ -205,26 +252,40 @@ const WeeklyUpdate = () => {
           </div>
 
           <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden">
-            <div className="w-full">
-              <table className="w-full table-fixed text-left whitespace-nowrap">
+            <div className="w-full overflow-x-auto">
+              <table className="w-full table-fixed text-left whitespace-nowrap min-w-[800px]">
                 <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
                   <tr>
                     <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">S.No</th>
-                    <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[15%]">Timestamp</th>
-                    <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[40%]">Progress Description</th>
-                    <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[20%]">Reporter</th>
+                    <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[25%]">Timestamp & Progress</th>
+                    <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[35%]">Progress Description</th>
+                    <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[15%]">Reporter</th>
                     <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[20%] border-l border-cghb-border">Attached Media</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-cghb-border">
                   <AnimatePresence>
                     {currentUpdates.map((update, index) => (
-                      <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={update.id} className="bg-transparent border-b border-cghb-border/50 last:border-0">
+                      <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={update.id} className="bg-transparent hover:bg-cghb-border/5 transition-colors">
                         <td className="px-4 py-4 text-center text-[12px] font-bold text-[var(--color-text-muted)] truncate">{indexOfFirstItem + index + 1}</td>
+                        
+                        {/* Merged Timestamp and Progress Column */}
                         <td className="px-4 py-4">
-                          <div className="text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-1.5 truncate"><Calendar size={12} className="text-cghb-yellow"/> {update.date}</div>
-                          <div className="text-[11px] font-mono text-[var(--color-text-muted)] flex items-center gap-1.5 mt-0.5 truncate"><Clock size={10}/> {update.time}</div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-bold text-[var(--color-text-main)] flex items-center gap-1.5"><Calendar size={12}/> {update.date}</span>
+                            <span className="text-[11px] font-black text-cghb-yellow">{update.progress}%</span>
+                          </div>
+                          {/* Mini Progress Bar */}
+                          <div className="w-full bg-[var(--color-bg-surface)] border border-cghb-border/50 rounded-full h-1.5 overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }} 
+                              animate={{ width: `${update.progress}%` }} 
+                              transition={{ duration: 1, ease: "easeOut" }}
+                              className="bg-cghb-yellow h-1.5 rounded-full" 
+                            />
+                          </div>
                         </td>
+
                         <td className="px-4 py-4 text-[12px] font-medium text-[var(--color-text-main)] truncate" title={update.description}>{update.description}</td>
                         <td className="px-4 py-4 text-[12px] font-bold text-[var(--color-text-main)] truncate">{update.reporter}</td>
                         <td className="px-4 py-4 text-center border-l border-cghb-border/50">
@@ -244,7 +305,8 @@ const WeeklyUpdate = () => {
                 </div>
               )}
             </div>
-            <div className="border-t border-cghb-border px-5 py-4 flex items-center justify-between bg-[var(--color-bg-surface)]">
+            
+            <div className="border-t border-cghb-border px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[var(--color-bg-surface)]">
               <span className="text-[12px] text-[var(--color-text-muted)] font-medium">
                 Viewing <strong>{filteredUpdates.length === 0 ? 0 : indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredUpdates.length)}</strong> of <strong>{filteredUpdates.length}</strong>
               </span>
@@ -262,6 +324,7 @@ const WeeklyUpdate = () => {
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       </div>
