@@ -106,8 +106,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
               { label: 'NIT Approval', to: '/dashboard/tender/nit-approval' },
               { label: 'Advertisement', to: '/dashboard/tender/advertisement' },
               { label: 'Tender Rate Approval', to: '/dashboard/tender/rate-approval' },
-              { label: 'Tender Agreement', to: '/dashboard/tender/agreement' },
-              { label: 'Tender Float', to: '/dashboard/tender/float' },
             ]}
           />
         )}

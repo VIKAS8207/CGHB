@@ -9,11 +9,9 @@ import Auth from '../pages/Auth';
 import CreateProject from '../pages/CreateProject';
 import Engineers from '../pages/Engineers';
 import SiteVisit from '../pages/SiteVisit';
-import Documentation from '../pages/Documentation';
 import NitApproval from '../pages/NitApproval';
 import Advertisement from '../pages/Advertisement';
 import RateApproval from '../pages/RateApproval';
-import TenderAgreement from '../pages/TenderAgreement'; // Adjust the path if your folder structure is different
 import Schemes from '../pages/Schemes';
 import AdministrativeApproval from '../pages/AdministrativeApproval';
 import TechnicalSanction from '../pages/TechnicalSanction';
@@ -72,7 +70,7 @@ const AppRouter = () => {
               <Route path="tender/nit-approval" element={<NitApproval />} />
               <Route path="tender/advertisement" element={<Advertisement />} />
               <Route path="tender/rate-approval" element={<RateApproval />} />
-              <Route path="tender/agreement" element={<TenderAgreement />} />
+              
 
               <Route path="schemes" element={<Schemes />} />
               <Route path="administrative-approval" element={<AdministrativeApproval />} />
@@ -89,7 +87,6 @@ const AppRouter = () => {
 
             {/* --- Shared Repository (All Roles) --- */}
             <Route element={<ProtectedRoute allowedRoles={[ROLES.COMMISSIONER, ROLES.DEPT_HEAD, ROLES.ENGINEER]} />}>
-              <Route path="documentation/*" element={<Documentation />} />
               <Route path="site-visit/:id/weekly-update" element={<WeeklyUpdate />} />
               <Route path="site-visit/:id/quality-aspect" element={<QualityAspect />} />
               <Route path="site-visit/:id/material-testing" element={<MaterialTesting />} />
