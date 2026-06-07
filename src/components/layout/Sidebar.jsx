@@ -5,7 +5,7 @@ import {
   Home, LayoutGrid, Settings, ChevronLeft, ChevronRight, 
   FolderPlus, Users, ClipboardList, HardHat, Files, 
   FileCheck, ChevronDown, LogOut, Activity, PieChart,
-  ClipboardCheck
+  ClipboardCheck, Layers, IndianRupee
 } from 'lucide-react';
 
 // Import Auth Tools
@@ -27,9 +27,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
       return ROLE_PERMISSIONS[userRole].includes(permissionKey);
     }
     
-    // Fallback for work-progress and reports in case they aren't in roles.js yet
+    // Fallback for work-progress, reports, and construction-stage in case they aren't in roles.js yet
     return ROLE_PERMISSIONS[userRole].includes(permissionKey) || 
-           ['work-progress', 'reports'].includes(permissionKey);
+           ['work-progress', 'reports', 'construction-stage'].includes(permissionKey);
   };
 
   const handleLogout = () => {
@@ -106,6 +106,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
               { label: 'NIT Approval', to: '/dashboard/tender/nit-approval' },
               { label: 'Advertisement', to: '/dashboard/tender/advertisement' },
               { label: 'Tender Rate Approval', to: '/dashboard/tender/rate-approval' },
+              { label: 'Tender Agreement', to: '/dashboard/tender/agreement' },
+              { label: 'Tender Float', to: '/dashboard/tender/float' },
             ]}
           />
         )}
@@ -118,6 +120,24 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
         {/* 7. Work Progress */}
         {hasAccess('work-progress') && (
           <NavItem onClick={handleMobileClose} to="/dashboard/work-progress" icon={<Activity size={18} />} label="Work Progress" active={location.pathname === '/dashboard/work-progress'} collapsed={isMobileOpen ? false : isCollapsed} />
+        )}
+
+        {/* 7.5 Construction Stage */}
+        {hasAccess('construction-stage') && (
+          <NavItem onClick={handleMobileClose} to="/dashboard/construction-stage" icon={<Layers size={18} />} label="Construction Stage" active={location.pathname === '/dashboard/construction-stage'} collapsed={isMobileOpen ? false : isCollapsed} />
+        )}
+
+        {/* 7.6 Financial Progress (Visible to Commissioner & Department Head) */}
+        {/* FIX: Correctly referencing ROLES.DEPT_HEAD here! */}
+        {(userRole === ROLES.COMMISSIONER || userRole === ROLES.DEPT_HEAD) && (
+          <NavItem 
+            onClick={handleMobileClose} 
+            to="/dashboard/financial-progress" 
+            icon={<IndianRupee size={18} />} 
+            label="Financial Progress" 
+            active={location.pathname === '/dashboard/financial-progress'} 
+            collapsed={isMobileOpen ? false : isCollapsed} 
+          />
         )}
 
         {/* 8. Documentation */}

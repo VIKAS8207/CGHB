@@ -22,6 +22,13 @@ import MaterialTesting from '../pages/MaterialTesting';
 import OnsiteTesting from '../pages/MaterialTesting';
 
 import WorkProgress from '../pages/WorkProgress';
+import Construction from '../pages/ConstructionStage';
+import ConstructionWorkshop from '../pages/ConstructionWorkshop';
+
+// FIX: Changed './pages/...' to '../pages/...'
+import FinancialProgress from '../pages/FinancialProgress'; 
+// You will also need to import the detailed workspace!
+import FinancialWorkspace from '../pages/FinancialWorkspace'; 
 
 // --- AUTH TOOLS ---
 import { AuthProvider } from '../context/AuthContext';
@@ -71,13 +78,14 @@ const AppRouter = () => {
               <Route path="tender/advertisement" element={<Advertisement />} />
               <Route path="tender/rate-approval" element={<RateApproval />} />
               
-
               <Route path="schemes" element={<Schemes />} />
               <Route path="administrative-approval" element={<AdministrativeApproval />} />
               <Route path="technical-sanction" element={<TechnicalSanction />} />
               
+              {/* FIX: Moved Financial Progress here so it's strictly for Comm & Dept Head */}
+              <Route path="financial-progress" element={<FinancialProgress />} />
+              <Route path="financial-progress/:id" element={<FinancialWorkspace />} />
               
-              {/* Other Management Areas */}
             </Route>
 
             {/* --- Field Operations (Commissioner & Engineer) --- */}
@@ -92,6 +100,8 @@ const AppRouter = () => {
               <Route path="site-visit/:id/material-testing" element={<MaterialTesting />} />
               <Route path="site-visit/:id/onsite-testing" element={<OnsiteTesting />} />
               <Route path="work-progress" element={<WorkProgress />} />
+              <Route path="construction-stage" element={<Construction />} />
+              <Route path="construction-stage/:id" element={<ConstructionWorkshop />} />
             </Route>
 
           </Route>
