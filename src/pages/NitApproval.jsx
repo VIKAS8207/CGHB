@@ -151,47 +151,7 @@ const NitApproval = () => {
         </div>
       </div>
 
-      {/* --- GATEWAY: SELECT PROJECT TO UPLOAD NIT (Hidden for Commissioner) --- */}
-      {userRole !== ROLES.COMMISSIONER && !isFormOpen && (
-        <div className="glass-panel p-6 rounded-xl border-l-4 border-l-cghb-yellow relative overflow-hidden">
-          <div className="absolute top-0 right-10 w-64 h-64 bg-cghb-yellow/5 blur-3xl pointer-events-none rounded-full" />
-          
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-cghb-yellow/10 text-cghb-yellow flex items-center justify-center rounded-lg">
-              <UploadCloud size={16} />
-            </div>
-            <h2 className="text-[15px] font-bold text-[var(--color-text-main)]">NIT Publication Gateway</h2>
-          </div>
-
-          <form onSubmit={handleOpenForm} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end relative z-10">
-            <div>
-              <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5">1. Select District</label>
-              <select required value={selectedDistrict} onChange={(e) => { setSelectedDistrict(e.target.value); setSelectedProject(''); }} className="w-full h-10 bg-transparent border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-md px-3 focus:outline-none focus:border-cghb-yellow transition-colors font-medium cursor-pointer">
-                <option value="" disabled>Choose District...</option>
-                <option value="Raipur" className="text-black bg-white">Raipur</option>
-                <option value="Bilaspur" className="text-black bg-white">Bilaspur</option>
-                <option value="Durg" className="text-black bg-white">Durg</option>
-                <option value="Bastar" className="text-black bg-white">Bastar</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5">2. Target Project</label>
-              <select required value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)} disabled={!selectedDistrict} className="w-full h-10 bg-transparent border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-md px-3 focus:outline-none focus:border-cghb-yellow transition-colors font-medium disabled:opacity-50 cursor-pointer">
-                <option value="" disabled>{selectedDistrict ? "Select Project..." : "Select District First"}</option>
-                {selectedDistrict === 'Raipur' && <><option className="text-black bg-white">Atal Vihar Phase 2</option><option className="text-black bg-white">Nava Raipur EWS</option></>}
-                {selectedDistrict === 'Bilaspur' && <option className="text-black bg-white">Bilaspur MIG Heights</option>}
-                {selectedDistrict === 'Durg' && <option className="text-black bg-white">Durg Residential</option>}
-                {selectedDistrict === 'Bastar' && <option className="text-black bg-white">Bastar Standalone Villas</option>}
-              </select>
-            </div>
-            <div>
-              <button type="submit" disabled={!selectedProject} className="w-full flex items-center justify-center gap-2 bg-cghb-yellow text-black text-[13px] font-bold uppercase tracking-wider h-10 rounded-md hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                Generate Form <Plus size={14} />
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      
 
       {/* --- MASSIVE NIT FORM (Hidden for Commissioner) --- */}
       {userRole !== ROLES.COMMISSIONER && (

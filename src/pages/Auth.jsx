@@ -7,6 +7,22 @@ import { Mail, Lock, ArrowRight, ArrowLeft, Building2, ShieldCheck, ChevronDown 
 import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../utils/roles';
 
+// Smart mapping: Connects specific UI titles to core system access levels
+const ROLE_OPTIONS = [
+  // Full Access Group (Maps to ROLES.COMMISSIONER)
+  { id: 'comm_1', label: 'Commissioner (Full Access)', baseRole: ROLES.COMMISSIONER },
+  { id: 'comm_2', label: 'Additional Commissioner (Full Access)', baseRole: ROLES.COMMISSIONER },
+  { id: 'comm_3', label: 'Deputy Commissioner (Full Access)', baseRole: ROLES.COMMISSIONER },
+  
+  // Mid Level Access Group (Maps to ROLES.DEPT_HEAD)
+  { id: 'mid_1', label: 'Divisional Incharge (Mid Access)', baseRole: ROLES.DEPT_HEAD },
+  { id: 'mid_2', label: 'Executive Engineer (EE) (Mid Access)', baseRole: ROLES.DEPT_HEAD },
+  
+  // Low Level Access Group (Maps to ROLES.ENGINEER)
+  { id: 'low_1', label: 'Assistant Engineer (AE) (Site Access)', baseRole: ROLES.ENGINEER },
+  { id: 'low_2', label: 'Sub Engineer (SE) (Site Access)', baseRole: ROLES.ENGINEER },
+];
+
 const Auth = () => {
   const [view, setView] = useState('login'); // 'login', 'forgot', or 'otp'
   const [timer, setTimer] = useState(60);
@@ -14,7 +30,7 @@ const Auth = () => {
   
   // Auth Context & State
   const { setUserRole } = useAuth();
-  const [selectedRole, setSelectedRole] = useState(ROLES.COMMISSIONER); // Default for testing
+  const [selectedRoleId, setSelectedRoleId] = useState(ROLE_OPTIONS[0].id); // Default to Commissioner
   
   const navigate = useNavigate();
 
@@ -37,7 +53,9 @@ const Auth = () => {
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
-    setUserRole(selectedRole); 
+    // Find the mapped system role based on the user's specific dropdown selection
+    const selectedOption = ROLE_OPTIONS.find(opt => opt.id === selectedRoleId);
+    setUserRole(selectedOption.baseRole); 
     navigate('/dashboard'); 
   };
 
@@ -147,16 +165,18 @@ const Auth = () => {
                       
                       {/* --- CUSTOMIZED ROLE DROPDOWN --- */}
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Administrative Role:</label>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Administrative Designation:</label>
                         <div className="relative">
                           <select 
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value)}
+                            value={selectedRoleId}
+                            onChange={(e) => setSelectedRoleId(e.target.value)}
                             className="w-full h-11 bg-white border border-slate-300 text-slate-900 rounded-none px-4 appearance-none focus:outline-none focus:border-[#F58634] hover:border-[#F58634] focus:ring-1 focus:ring-[#F58634] transition-colors font-bold cursor-pointer text-sm"
                           >
-                            <option value={ROLES.COMMISSIONER}>Commissioner (Full Access)</option>
-                            <option value={ROLES.DEPT_HEAD}>Department Head (Mid Access)</option>
-                            <option value={ROLES.ENGINEER}>Field Engineer (Site Access)</option>
+                            {ROLE_OPTIONS.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ))}
                           </select>
                           {/* Custom perfectly aligned dropdown arrow */}
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
