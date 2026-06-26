@@ -11,7 +11,7 @@ const ConstructionWorkshop = () => {
   const navigate = useNavigate();
 
   // Mock: Categories available in this specific project
-  const availableGroups = ['CRMIG', 'JMIG', 'LIG', 'SEG'];
+  const availableGroups = ['HIG', 'MIG', 'LIG', 'EWS', 'Others']; // This can be dynamic based on project data
   const [activeTab, setActiveTab] = useState(availableGroups[0]);
 
   // Houses State: 
@@ -59,9 +59,12 @@ const ConstructionWorkshop = () => {
 
           let newLevels = { ...row.levels, [levelKey]: value };
           
-          // Logic: If 'complete' is checked, auto-check everything before it
-          if (levelKey === 'complete' && value === true) {
-            levels.forEach(l => newLevels[l.key] = true);
+          // Logic: If any stage is checked, auto-check everything before it
+          if (value === true) {
+            const levelIndex = levels.findIndex(l => l.key === levelKey);
+            for (let i = 0; i <= levelIndex; i++) {
+              newLevels[levels[i].key] = true;
+            }
           }
           
           return { ...row, levels: newLevels };

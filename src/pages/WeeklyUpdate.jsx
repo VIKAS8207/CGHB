@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Building2, Calendar, Camera, UploadCloud, 
   Save, Check, Image as ImageIcon, Search, Filter,
-  ChevronLeft, ChevronRight, MapPin, Clock, X, AlertCircle, Percent
+  ChevronLeft, ChevronRight, MapPin, Clock, X, AlertCircle, Percent, Plus
 } from 'lucide-react';
 
 // Import Auth Tools
@@ -21,8 +21,8 @@ const mockProjects = [
 ];
 
 const initialUpdates = [
-  { id: 'UPD-001', projectId: 'PRJ-1042', date: '10 May 2026', time: '14:30', description: 'Foundation laying completed for Block A. Excavation for Block B has started.', progress: 15, image: 'foundation.jpg', reporter: 'Vikram Singh' },
-  { id: 'UPD-002', projectId: 'PRJ-1042', date: '03 May 2026', time: '09:15', description: 'Site cleared and leveled. Raw materials for foundation arrived.', progress: 5, image: 'site_clear.jpg', reporter: 'Vikram Singh' },
+  { id: 'UPD-001', projectId: 'PRJ-1042', date: '10 May 2026', time: '14:30', description: 'Foundation laying completed for Block A. Excavation for Block B has started.', progress: 15, images: ['foundation.jpg'], reporter: 'Vikram Singh' },
+  { id: 'UPD-002', projectId: 'PRJ-1042', date: '03 May 2026', time: '09:15', description: 'Site cleared and leveled. Raw materials for foundation arrived.', progress: 5, images: ['site_clear.jpg', 'materials.jpg'], reporter: 'Vikram Singh' },
 ];
 
 const WeeklyUpdate = () => {
@@ -45,8 +45,10 @@ const WeeklyUpdate = () => {
   const [description, setDescription] = useState('');
   // Automatically start the slider at the previously completed progress mark
   const [progressValue, setProgressValue] = useState(latestProgress); 
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  
+  // Multiple Image States
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const fileInputRef = useRef(null);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,22 +75,25 @@ const WeeklyUpdate = () => {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      const filesArray = Array.from(e.target.files);
+      setImageFiles(prev => [...prev, ...filesArray]);
+      
+      const previewsArray = filesArray.map(file => URL.createObjectURL(file));
+      setImagePreviews(prev => [...prev, ...previewsArray]);
     }
+    // Reset file input value to allow selecting the same file again if needed
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const clearImage = (e) => {
+  const removeImage = (indexToRemove, e) => {
     e.stopPropagation();
-    setImageFile(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setImageFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+    setImagePreviews(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!description.trim() || !imageFile) return;
+    if (!description.trim() || imageFiles.length === 0) return;
 
     const newUpdate = {
       id: `UPD-${Date.now()}`,
@@ -97,7 +102,7 @@ const WeeklyUpdate = () => {
       time: currentDateTime.time,
       description: description,
       progress: progressValue, // Save current slider position
-      image: imageFile.name,
+      images: imageFiles.map(f => f.name),
       reporter: user?.name || 'Authorized Personnel'
     };
 
@@ -108,8 +113,8 @@ const WeeklyUpdate = () => {
     // We intentionally DO NOT reset progressValue to 0 here. 
     // It stays at its current value so the engineer builds upon it next week!
     
-    setImageFile(null);
-    setImagePreview(null);
+    setImageFiles([]);
+    setImagePreviews([]);
     setCurrentPage(1);
   };
 
@@ -167,26 +172,31 @@ const WeeklyUpdate = () => {
               
               {/* Image Upload Area */}
               <div>
-                <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Site Photograph</label>
-                <div onClick={handleImageClick} className={`w-full aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group ${imagePreview ? 'border-emerald-500/50 bg-black/20' : 'border-cghb-border bg-[var(--color-bg-surface)] hover:border-cghb-yellow hover:bg-cghb-border/10'}`}>
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileChange} />
+                <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Site Photographs</label>
+                <div className={`w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all overflow-hidden relative group ${imagePreviews.length > 0 ? 'border-emerald-500/50 bg-[var(--color-bg-surface)] p-3' : 'aspect-square border-cghb-border bg-[var(--color-bg-surface)] hover:border-cghb-yellow hover:bg-cghb-border/10 cursor-pointer'}`} onClick={imagePreviews.length === 0 ? handleImageClick : undefined}>
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple capture="environment" onChange={handleFileChange} />
+                  
                   <AnimatePresence>
-                    {imagePreview ? (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full h-full relative">
-                        <img src={imagePreview} alt="Site Preview" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
-                          <Camera size={24} className="mb-2"/>
-                          <span className="text-[12px] font-bold uppercase tracking-wider">Retake Photo</span>
+                    {imagePreviews.length > 0 ? (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full grid grid-cols-3 gap-2">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-cghb-border/50 group/item">
+                            <img src={preview} alt={`Site Preview ${index + 1}`} className="w-full h-full object-cover" />
+                            <button type="button" onClick={(e) => removeImage(index, e)} className="absolute top-1 right-1 p-1 bg-red-500/90 text-white rounded-md shadow-md opacity-0 group-hover/item:opacity-100 hover:bg-red-600 transition-all">
+                              <X size={12}/>
+                            </button>
+                          </div>
+                        ))}
+                        {/* Add More Button inside grid */}
+                        <div onClick={handleImageClick} className="aspect-square rounded-lg border-2 border-dashed border-cghb-border flex items-center justify-center cursor-pointer hover:border-cghb-yellow hover:bg-cghb-yellow/10 transition-colors text-[var(--color-text-muted)] hover:text-cghb-yellow">
+                          <Plus size={20} />
                         </div>
-                        <button type="button" onClick={clearImage} className="absolute top-3 right-3 p-1.5 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition-colors">
-                          <X size={14}/>
-                        </button>
                       </motion.div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center text-[var(--color-text-muted)] group-hover:text-cghb-yellow transition-colors">
+                      <div className="flex flex-col items-center justify-center text-[var(--color-text-muted)] group-hover:text-cghb-yellow transition-colors w-full h-full">
                         <Camera size={32} className="mb-3"/>
-                        <span className="text-[12px] font-bold uppercase tracking-wider">Tap to open Camera</span>
-                        <span className="text-[10px] opacity-70 mt-1">or select from gallery</span>
+                        <span className="text-[12px] font-bold uppercase tracking-wider">Tap to upload photos</span>
+                        <span className="text-[10px] opacity-70 mt-1">Select one or multiple</span>
                       </div>
                     )}
                   </AnimatePresence>
@@ -230,7 +240,7 @@ const WeeklyUpdate = () => {
               </div>
 
               <div className="pt-2">
-                <button type="submit" disabled={!imageFile || !description.trim()} className="w-full flex items-center justify-center gap-2 bg-cghb-yellow text-black text-[13px] font-bold uppercase tracking-wider h-11 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                <button type="submit" disabled={imageFiles.length === 0 || !description.trim()} className="w-full flex items-center justify-center gap-2 bg-cghb-yellow text-black text-[13px] font-bold uppercase tracking-wider h-11 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
                   <Save size={16}/> Record Progress
                 </button>
               </div>
@@ -290,7 +300,7 @@ const WeeklyUpdate = () => {
                         <td className="px-4 py-4 text-[12px] font-bold text-[var(--color-text-main)] truncate">{update.reporter}</td>
                         <td className="px-4 py-4 text-center border-l border-cghb-border/50">
                           <button className="mx-auto flex items-center justify-center gap-2 px-3 py-1.5 bg-cghb-border/10 border border-cghb-border rounded-md text-[11px] font-bold text-[var(--color-text-main)] hover:bg-cghb-yellow hover:text-black transition-all">
-                            <ImageIcon size={14}/> View Image
+                            <ImageIcon size={14}/> View {update.images?.length || 1} {update.images?.length === 1 ? 'Image' : 'Images'}
                           </button>
                         </td>
                       </motion.tr>

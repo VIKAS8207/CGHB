@@ -6,6 +6,7 @@ import {
   UploadCloud, Save, Check, FileText, X, AlertCircle, Plus,
   ClipboardList
 } from 'lucide-react';
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Import the mock data from the other page to keep things synced
 import { mockFinancialProjects } from './FinancialProgress'; 
@@ -18,6 +19,19 @@ const initialFundReleases = [
 const initialRunningBills = [
   { id: 'RB-101', billingDate: '2026-04-10', paymentDate: '2026-04-14', amount: 4.50, billFile: 'Contractor_RA_Bill_1.pdf' },
 ];
+
+// Custom Tooltip for the Wavy Graphs to match your UI
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[var(--color-bg-surface)] border border-cghb-border p-3 rounded-lg shadow-xl">
+        <p className="text-[10px] font-bold text-[var(--color-text-muted)] mb-1 uppercase tracking-wider">{label}</p>
+        <p className="text-[14px] font-black text-[var(--color-text-main)]">₹{payload[0].value.toFixed(2)} Cr</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 const FinancialWorkspace = () => {
   const { id } = useParams();
@@ -127,6 +141,10 @@ const FinancialWorkspace = () => {
   const totalReleasedCalc = releases.reduce((sum, r) => sum + r.amount, 0);
   const percentage = totalDeclared > 0 ? Math.round((totalReleasedCalc / totalDeclared) * 100) : 0;
 
+  // Format data for smooth wavy charts
+  const fundChartData = [...releases].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const rbChartData = [...runningBills].sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate)).map(rb => ({ ...rb, date: rb.paymentDate }));
+
   return (
     <div className="w-full max-w-[1200px] mx-auto animate-in fade-in duration-300 font-sans relative z-10 space-y-6">
       
@@ -146,10 +164,10 @@ const FinancialWorkspace = () => {
       {/* TOP SUMMARY WIDGETS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        {/* Declared Fund Widget */}
+        {/* Work Order Amount Widget */}
         <div className="glass-panel p-6 rounded-2xl border-t-4 border-t-cghb-yellow shadow-sm flex flex-col justify-center">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[12px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">1. Total Declared Fund</span>
+            <span className="text-[12px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">1. Work Order Amount</span>
             {!isEditingDeclared && (
               <button onClick={() => setIsEditingDeclared(true)} className="text-[11px] font-bold text-blue-500 hover:underline">Update Amount</button>
             )}
@@ -178,10 +196,10 @@ const FinancialWorkspace = () => {
           )}
         </div>
 
-        {/* Released Fund Summary Widget */}
+        {/* Financial Progress Widget */}
         <div className="glass-panel p-6 rounded-2xl border-t-4 border-t-emerald-500 shadow-sm flex flex-col justify-center">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[12px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">2. Total Funds Released</span>
+            <span className="text-[12px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">2. Financial Progress</span>
             <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-md text-[11px] font-black">{percentage}% Funded</span>
           </div>
           <h2 className="text-4xl font-black text-emerald-500 mb-4 flex items-center gap-2">
@@ -190,6 +208,67 @@ const FinancialWorkspace = () => {
           {/* Progress Bar */}
           <div className="w-full bg-[var(--color-bg-main)] rounded-full h-2 overflow-hidden border border-cghb-border/50">
             <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 1, ease: "easeOut" }} className="bg-emerald-500 h-2 rounded-full" />
+          </div>
+        </div>
+
+      </div>
+
+      {/* --- GRAPHS SECTION --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+        
+        {/* Graph 1: Fund Releases */}
+        <div className="glass-panel p-5 rounded-2xl border border-cghb-border shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest flex items-center gap-2">
+              <div className="w-2 h-2 bg-cghb-yellow rounded-full"></div> Fund Release Trend
+            </h4>
+          </div>
+          <div className="h-40 w-full">
+            {fundChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={fundChartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorYellow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#EAB308" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#EAB308" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" hide />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area type="monotone" dataKey="amount" stroke="#EAB308" strokeWidth={3} fillOpacity={1} fill="url(#colorYellow)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[12px] text-[var(--color-text-muted)] font-medium">No release data available</div>
+            )}
+          </div>
+        </div>
+
+        {/* Graph 2: Running Bills */}
+        <div className="glass-panel p-5 rounded-2xl border border-cghb-border shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div> Running Bill Payments
+            </h4>
+          </div>
+          <div className="h-40 w-full">
+            {rbChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={rbChartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorBlue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" hide />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area type="monotone" dataKey="amount" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorBlue)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[12px] text-[var(--color-text-muted)] font-medium">No billing data available</div>
+            )}
           </div>
         </div>
 

@@ -56,10 +56,11 @@ const CreateProject = () => {
 
   // Housing Group Options
   const HOUSING_GROUPS = [
-    { id: 'CRMIG', label: 'CRMIG (Common Regular Middle Income Group)' },
-    { id: 'JMIG', label: 'JMIG (Junior Middle Income Group)' },
+    { id: 'HIG', label: 'HIG (High Income Group)' },
+    { id: 'MIG', label: 'MIG (Middle Income Group)' },
     { id: 'LIG', label: 'LIG (Low Income Group)' },
-    { id: 'SEG', label: 'SEG (Special Employee Group)' }
+    { id: 'EWS', label: 'EWS (Economically Weaker Section)' },
+    { id: 'Others', label: 'Others' }
   ];
 
   // --- ACTIONS ---
