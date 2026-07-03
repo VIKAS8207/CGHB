@@ -6,17 +6,56 @@ import {
   MoreVertical, Edit, Building2, HardHat, AlertCircle
 } from 'lucide-react';
 
+// Mock Data updated to strictly match the schema from ConstructionStage
+const mockProjects = [
+  { id: 'PRJ-1042', name: 'Atal Vihar Phase 2', status: 'Active', physicalProgress: 65, hig: 10, mig: 20, lig: 150, ews: 50, others: 0 },
+  { id: 'PRJ-1043', name: 'Nava Raipur EWS Block C', status: 'Active', physicalProgress: 30, hig: 0, mig: 0, lig: 50, ews: 100, others: 0 },
+  { id: 'PRJ-1044', name: 'Bilaspur MIG Heights', status: 'Completed', physicalProgress: 100, hig: 20, mig: 80, lig: 0, ews: 0, others: 0 },
+  { id: 'PRJ-1045', name: 'Raigarh Admin Complex', status: 'Active', physicalProgress: 0, hig: 5, mig: 0, lig: 15, ews: 0, others: 2 },
+];
+
+// Reference list of all possible groups
+const ALL_GROUPS = ['HIG', 'MIG', 'LIG', 'EWS', 'Others'];
+
 const ConstructionWorkshop = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Mock: Categories available in this specific project
-  const availableGroups = ['HIG', 'MIG', 'LIG', 'EWS', 'Others']; // This can be dynamic based on project data
+  // Find the specific project, fallback to a default if not found
+  const project = mockProjects.find(p => p.id === id) || { 
+    id: id || 'PRJ-XXXX', name: 'Sample Project', hig: 5, mig: 5, lig: 0, ews: 0, others: 0 
+  };
+
+  // Dynamically determine which tabs to show based on if the project has > 0 houses for that category
+  let availableGroups = ALL_GROUPS.filter(group => {
+    const key = group.toLowerCase(); // matches 'hig', 'mig', etc.
+    return project[key] > 0;
+  });
+
+  // Failsafe in case a project has 0 across the board
+  if (availableGroups.length === 0) availableGroups = ['HIG'];
+
   const [activeTab, setActiveTab] = useState(availableGroups[0]);
 
-  // Houses State: 
-  // Structure: { CRMIG: [{ id, houseNo, levels: {}, houseNoLocked: false, statusLocked: false }] }
-  const [houseData, setHouseData] = useState({});
+  // Initialize houseData dynamically based on the project's exact category counts!
+  const [houseData, setHouseData] = useState(() => {
+    const initialData = {};
+    availableGroups.forEach(group => {
+      const key = group.toLowerCase();
+      const count = project[key] || 0;
+      
+      // Pre-generate the exact number of rows
+      initialData[group] = Array.from({ length: count }, (_, i) => ({
+        id: `init-${group}-${i}-${Date.now()}`,
+        houseNo: '', 
+        levels: {}, 
+        houseNoLocked: false, 
+        statusLocked: false
+      }));
+    });
+    return initialData;
+  });
+
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   const levels = [
@@ -121,7 +160,7 @@ const ConstructionWorkshop = () => {
             Construction <span className="text-cghb-yellow">Workshop</span>
           </h1>
           <p className="text-[13px] text-[var(--color-text-muted)] font-medium mt-1 flex items-center gap-2">
-            <Building2 size={14} className="text-cghb-yellow" /> Project ID: {id} <span className="opacity-50">|</span> Field Execution Tracker
+            <Building2 size={14} className="text-cghb-yellow" /> Project: {project.name} <span className="opacity-50">|</span> Field Execution Tracker
           </p>
         </div>
       </div>
@@ -153,11 +192,10 @@ const ConstructionWorkshop = () => {
             onClick={addRow} 
             className="flex items-center gap-2 px-4 py-2 bg-cghb-yellow text-black rounded-lg text-[12px] font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-sm"
           >
-            <Plus size={14} /> Add House
+            <Plus size={14} /> Add Extra House
           </button>
         </div>
 
-        {/* Removed min-h-[300px] so the table perfectly wraps its content */}
         <div className="w-full overflow-x-auto">
           <table className="w-full text-left whitespace-nowrap min-w-[1200px]">
             <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
@@ -178,7 +216,7 @@ const ConstructionWorkshop = () => {
                     <td colSpan={levels.length + 2} className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <AlertCircle size={32} className="opacity-30" />
-                        No houses logged for {activeTab} yet. Click "Add House" to begin tracking.
+                        No houses requested for {activeTab} during project creation. Click "Add Extra House" to begin tracking manually.
                       </div>
                     </td>
                   </tr>

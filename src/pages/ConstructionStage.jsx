@@ -5,12 +5,12 @@ import {
   Search, Filter, HardHat, AlertCircle, Edit2, Eye, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
-// Mock data reflecting your required fields (added a 0% progress example)
+// Mock data reflecting your new housing categories
 const initialConstructionData = [
-  { id: 'PRJ-1042', name: 'Atal Vihar Phase 2', status: 'Active', physicalProgress: 65, crmig: 20, jmig: 30, lig: 50, seg: 10 },
-  { id: 'PRJ-1043', name: 'Nava Raipur EWS Block C', status: 'Active', physicalProgress: 30, crmig: 0, jmig: 0, lig: 100, seg: 0 },
-  { id: 'PRJ-1044', name: 'Bilaspur MIG Heights', status: 'Completed', physicalProgress: 100, crmig: 40, jmig: 40, lig: 0, seg: 0 },
-  { id: 'PRJ-1045', name: 'Raigarh Admin Complex', status: 'Active', physicalProgress: 0, crmig: 0, jmig: 5, lig: 15, seg: 2 },
+  { id: 'PRJ-1042', name: 'Atal Vihar Phase 2', status: 'Active', physicalProgress: 65, hig: 10, mig: 20, lig: 150, ews: 50, others: 0 },
+  { id: 'PRJ-1043', name: 'Nava Raipur EWS Block C', status: 'Active', physicalProgress: 30, hig: 0, mig: 0, lig: 50, ews: 100, others: 0 },
+  { id: 'PRJ-1044', name: 'Bilaspur MIG Heights', status: 'Completed', physicalProgress: 100, hig: 20, mig: 80, lig: 0, ews: 0, others: 0 },
+  { id: 'PRJ-1045', name: 'Raigarh Admin Complex', status: 'Active', physicalProgress: 0, hig: 5, mig: 0, lig: 15, ews: 0, others: 2 },
 ];
 
 const ConstructionStage = () => {
@@ -69,19 +69,20 @@ const ConstructionStage = () => {
             <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
               <tr>
                 <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">S.No</th>
-                <th className="px-6 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[20%]">Project Name</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[25%] text-center">Physical Progress</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%] text-center">CRMIG</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%] text-center">JMIG</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%] text-center">LIG</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%] text-center">SEG</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[15%] border-l border-cghb-border">Action</th>
+                <th className="px-6 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[18%]">Project Name</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[22%] text-center">Physical Progress</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">HIG</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">MIG</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">LIG</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">EWS</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">Others</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[12%] border-l border-cghb-border">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cghb-border/50">
               <AnimatePresence>
                 {currentData.length === 0 ? (
-                  <tr><td colSpan="8" className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No projects found in this stage.</td></tr>
+                  <tr><td colSpan="9" className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No projects found in this stage.</td></tr>
                 ) : (
                   currentData.map((p, index) => (
                     <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={p.id} className="hover:bg-cghb-border/5 transition-colors">
@@ -103,8 +104,9 @@ const ConstructionStage = () => {
                         </div>
                       </td>
 
-                      {[p.crmig, p.jmig, p.lig, p.seg].map((val, i) => (
-                        <td key={i} className="px-4 py-4 text-center text-[12px] font-bold text-[var(--color-text-main)]">
+                      {/* Map through the new housing categories */}
+                      {[p.hig, p.mig, p.lig, p.ews, p.others].map((val, i) => (
+                        <td key={i} className="px-2 py-4 text-center text-[12px] font-bold text-[var(--color-text-main)]">
                           {val > 0 ? (
                             <span className="px-2 py-1 bg-[var(--color-bg-surface)] border border-cghb-border rounded-md shadow-sm">{val}</span>
                           ) : (
@@ -131,7 +133,7 @@ const ConstructionStage = () => {
                         )}
                       </td>
 
-                    </motion.tr> // <-- FIX: Properly closed motion.tr
+                    </motion.tr>
                   ))
                 )}
               </AnimatePresence>

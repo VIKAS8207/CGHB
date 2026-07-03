@@ -11,9 +11,9 @@ import { ROLES } from '../utils/roles';
 
 // Mock Data updated to the new schema
 const initialProjects = [
-  { id: 'PRJ-1042', isSubProject: false, parentProjectId: '', projectName: 'Atal Vihar Phase 2', subProjectName: '', agreementNo: 'AGR-2025-01', creationDate: '2025-01-15', dueDate: '2026-12-31', workType: 'Construction', sanctionYear: '2025-26', district: 'Raipur', city: 'Naya Raipur', ward: 'Ward 12', area: '45000', contractor: 'R.K. Builders', scheme: 'Atal Vihar Yojana', assistantEngineer: 'Rajesh Sharma', subEngineer: 'Vikram Singh', housingGroups: ['LIG'], status: 'Active' },
-  { id: 'PRJ-1043', isSubProject: true, parentProjectId: 'PRJ-1042', projectName: 'Atal Vihar Phase 2', subProjectName: 'Block C Extension', agreementNo: 'AGR-2025-14', creationDate: '2025-03-10', dueDate: '2026-06-30', workType: 'Development', sanctionYear: '2025-26', district: 'Raipur', city: 'Naya Raipur', ward: 'Ward 12', area: '12000', contractor: 'SUDA Infra', scheme: 'Atal Vihar Yojana', assistantEngineer: 'Priya Patel', subEngineer: 'Amit Kumar', housingGroups: ['LIG', 'SEG'], status: 'Active' },
-  { id: 'PRJ-1044', isSubProject: false, parentProjectId: '', projectName: 'Bilaspur MIG Heights', subProjectName: '', agreementNo: 'AGR-2024-88', creationDate: '2024-11-05', dueDate: '2025-10-31', workType: 'Construction', sanctionYear: '2024-25', district: 'Bilaspur', city: 'Bilaspur City', ward: 'Ward 45', area: '15000', contractor: 'CGHB Urban', scheme: 'MIG Housing Dev', assistantEngineer: 'Suresh Iyer', subEngineer: 'Neha Gupta', housingGroups: ['CRMIG', 'JMIG'], status: 'Active' },
+  { id: 'PRJ-1042', isSubProject: false, parentProjectId: '', projectName: 'Atal Vihar Phase 2', subProjectName: '', workOrderNumber: 'WO-2025-001', probableCompletionDate: '2026-11-30', agreementNo: 'AGR-2025-01', creationDate: '2025-01-15', dueDate: '2026-12-31', workType: 'Construction', sanctionYear: '2025-26', district: 'Raipur', city: 'Naya Raipur', ward: 'Ward 12', area: '45000', contractor: 'R.K. Builders', scheme: 'Atal Vihar Yojana', assistantEngineer: 'Rajesh Sharma', subEngineer: 'Vikram Singh', housingGroups: ['LIG'], housingGroupCounts: { 'LIG': 150 }, status: 'Active' },
+  { id: 'PRJ-1043', isSubProject: true, parentProjectId: 'PRJ-1042', projectName: 'Atal Vihar Phase 2', subProjectName: 'Block C Extension', workOrderNumber: 'WO-2025-014', probableCompletionDate: '2026-05-30', agreementNo: 'AGR-2025-14', creationDate: '2025-03-10', dueDate: '2026-06-30', workType: 'Development', sanctionYear: '2025-26', district: 'Raipur', city: 'Naya Raipur', ward: 'Ward 12', area: '12000', contractor: 'SUDA Infra', scheme: 'Atal Vihar Yojana', assistantEngineer: 'Priya Patel', subEngineer: 'Amit Kumar', housingGroups: ['LIG', 'EWS'], housingGroupCounts: { 'LIG': 50, 'EWS': 100 }, status: 'Active' },
+  { id: 'PRJ-1044', isSubProject: false, parentProjectId: '', projectName: 'Bilaspur MIG Heights', subProjectName: '', workOrderNumber: 'WO-2024-088', probableCompletionDate: '2025-09-15', agreementNo: 'AGR-2024-88', creationDate: '2024-11-05', dueDate: '2025-10-31', workType: 'Construction', sanctionYear: '2024-25', district: 'Bilaspur', city: 'Bilaspur City', ward: 'Ward 45', area: '15000', contractor: 'CGHB Urban', scheme: 'MIG Housing Dev', assistantEngineer: 'Suresh Iyer', subEngineer: 'Neha Gupta', housingGroups: ['MIG'], housingGroupCounts: { 'MIG': 80 }, status: 'Active' },
 ];
 
 const CreateProject = () => {
@@ -38,6 +38,8 @@ const CreateProject = () => {
     parentProjectId: '',
     projectName: '',
     subProjectName: '',
+    workOrderNumber: '',
+    probableCompletionDate: '',
     agreementNo: '',
     creationDate: '',
     dueDate: '',
@@ -51,7 +53,8 @@ const CreateProject = () => {
     scheme: '',
     assistantEngineer: '',
     subEngineer: '',
-    housingGroups: []
+    housingGroups: [],
+    housingGroupCounts: {}
   });
 
   // Housing Group Options
@@ -69,8 +72,25 @@ const CreateProject = () => {
       const groups = prev.housingGroups.includes(groupId)
         ? prev.housingGroups.filter(g => g !== groupId)
         : [...prev.housingGroups, groupId];
-      return { ...prev, housingGroups: groups };
+      
+      const counts = { ...prev.housingGroupCounts };
+      // Clean up the count if the user unchecks the group
+      if (!groups.includes(groupId)) {
+        delete counts[groupId];
+      }
+
+      return { ...prev, housingGroups: groups, housingGroupCounts: counts };
     });
+  };
+
+  const handleCountChange = (groupId, count) => {
+    setFormData(prev => ({
+      ...prev,
+      housingGroupCounts: {
+        ...prev.housingGroupCounts,
+        [groupId]: count
+      }
+    }));
   };
 
   const handleSubmit = (e) => {
@@ -99,9 +119,9 @@ const CreateProject = () => {
     
     // Reset Form
     setFormData({ 
-      isSubProject: false, parentProjectId: '', projectName: '', subProjectName: '', agreementNo: '', creationDate: '', 
-      dueDate: '', workType: '', sanctionYear: '', district: '', city: '', ward: '', area: '', contractor: '', scheme: '', 
-      assistantEngineer: '', subEngineer: '', housingGroups: [] 
+      isSubProject: false, parentProjectId: '', projectName: '', subProjectName: '', workOrderNumber: '', probableCompletionDate: '',
+      agreementNo: '', creationDate: '', dueDate: '', workType: '', sanctionYear: '', district: '', city: '', ward: '', 
+      area: '', contractor: '', scheme: '', assistantEngineer: '', subEngineer: '', housingGroups: [], housingGroupCounts: {} 
     });
     setIsFormOpen(false);
   };
@@ -113,6 +133,8 @@ const CreateProject = () => {
       parentProjectId: project.parentProjectId || '',
       projectName: project.projectName || '',
       subProjectName: project.subProjectName || '',
+      workOrderNumber: project.workOrderNumber || '',
+      probableCompletionDate: project.probableCompletionDate || '',
       agreementNo: project.agreementNo || '',
       creationDate: project.creationDate || '',
       dueDate: project.dueDate || '',
@@ -126,7 +148,8 @@ const CreateProject = () => {
       scheme: project.scheme || '',
       assistantEngineer: project.assistantEngineer || '',
       subEngineer: project.subEngineer || '',
-      housingGroups: project.housingGroups || []
+      housingGroups: project.housingGroups || [],
+      housingGroupCounts: project.housingGroupCounts || {}
     });
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -136,6 +159,11 @@ const CreateProject = () => {
     if(window.confirm("Are you sure you want to delete this project record? This action cannot be undone.")) {
       setProjects(projects.filter(p => p.id !== id));
     }
+  };
+
+  const handleView = (project) => {
+    setViewingProject(project);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Close dropdown on click outside or scroll
@@ -153,7 +181,8 @@ const CreateProject = () => {
   const filteredProjects = projects.filter(p => 
     p.projectName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.subProjectName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.contractor.toLowerCase().includes(searchTerm.toLowerCase())
+    p.contractor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.workOrderNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sortedProjects = [...filteredProjects].sort((a, b) => b.id.localeCompare(a.id));
@@ -206,6 +235,8 @@ const CreateProject = () => {
                 <span className="block text-[15px] font-black text-[var(--color-text-main)]">{viewingProject.isSubProject ? viewingProject.subProjectName : '-'}</span>
               </div>
               
+              <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Work Order No.</span><span className="block text-[14px] font-bold text-[var(--color-text-main)]">{viewingProject.workOrderNumber || '-'}</span></div>
+              <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Probable Completion</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.probableCompletionDate || '-'}</span></div>
               <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Agreement No</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.agreementNo || '-'}</span></div>
               <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Creation Date</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.creationDate || '-'}</span></div>
               <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Due Date</span><span className="block text-[14px] font-medium text-orange-500">{viewingProject.dueDate || '-'}</span></div>
@@ -236,12 +267,15 @@ const CreateProject = () => {
               <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Sub Engineer</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingProject.subEngineer || '-'}</span></div>
               
               <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm md:col-span-4 mt-2">
-                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Housing Groups Included</span>
-                <div className="flex flex-wrap gap-2">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Housing Groups & Quantities Included</span>
+                <div className="flex flex-wrap gap-3">
                   {viewingProject.housingGroups?.length > 0 ? (
                     viewingProject.housingGroups.map(group => (
-                      <span key={group} className="px-3 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-md text-[12px] font-bold">
-                        {HOUSING_GROUPS.find(hg => hg.id === group)?.label || group}
+                      <span key={group} className="px-4 py-1.5 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-md text-[13px] font-bold flex items-center gap-2">
+                        {HOUSING_GROUPS.find(hg => hg.id === group)?.label || group} 
+                        <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-[11px]">
+                          {viewingProject.housingGroupCounts?.[group] || 0} Units
+                        </span>
                       </span>
                     ))
                   ) : (
@@ -312,7 +346,7 @@ const CreateProject = () => {
                   {/* MASTER GRID: Perfectly symmetrical 4-column layout */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     
-                    {/* Row 1: Project Type & Identification (Merged Seamlessly) */}
+                    {/* Row 1: Project Type & Identification */}
                     <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-6 items-end pb-2">
                       
                       {/* Project Type Toggle */}
@@ -363,7 +397,15 @@ const CreateProject = () => {
                       </div>
                     </div>
 
-                    {/* Row 2 */}
+                    {/* Row 2: NEW FIELDS ADDED HERE */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Work Order No.</label>
+                      <input type="text" required placeholder="e.g., WO-2025-01" value={formData.workOrderNumber} onChange={e => setFormData({...formData, workOrderNumber: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Probable Completion Date</label>
+                      <input type="date" required value={formData.probableCompletionDate} onChange={e => setFormData({...formData, probableCompletionDate: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
+                    </div>
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Agreement No.</label>
                       <input type="text" required placeholder="e.g., AGR-101" value={formData.agreementNo} onChange={e => setFormData({...formData, agreementNo: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
@@ -372,6 +414,8 @@ const CreateProject = () => {
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Date of Creation</label>
                       <input type="date" required value={formData.creationDate} onChange={e => setFormData({...formData, creationDate: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
                     </div>
+
+                    {/* Row 3 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Due Date</label>
                       <input type="date" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
@@ -380,8 +424,6 @@ const CreateProject = () => {
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Type of Work</label>
                       <input type="text" required placeholder="e.g., Construction" value={formData.workType} onChange={e => setFormData({...formData, workType: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
                     </div>
-
-                    {/* Row 3 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Sanction Year</label>
                       <input type="text" required placeholder="e.g., 2025-26" value={formData.sanctionYear} onChange={e => setFormData({...formData, sanctionYear: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
@@ -390,6 +432,8 @@ const CreateProject = () => {
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">District</label>
                       <input type="text" required placeholder="e.g., Raipur" value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
                     </div>
+
+                    {/* Row 4 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">City/Town</label>
                       <input type="text" required placeholder="e.g., Naya Raipur" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
@@ -398,8 +442,6 @@ const CreateProject = () => {
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">GP / Ward Name</label>
                       <input type="text" required placeholder="e.g., Ward 12" value={formData.ward} onChange={e => setFormData({...formData, ward: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
                     </div>
-
-                    {/* Row 4 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Total Area (Sq. Ft.)</label>
                       <input type="number" required placeholder="e.g., 45000" value={formData.area} onChange={e => setFormData({...formData, area: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
@@ -408,6 +450,8 @@ const CreateProject = () => {
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Name of Contractor</label>
                       <input type="text" required placeholder="e.g., CGHB Urban" value={formData.contractor} onChange={e => setFormData({...formData, contractor: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
                     </div>
+
+                    {/* Row 5 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Scheme</label>
                       <select required value={formData.scheme} onChange={e => setFormData({...formData, scheme: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm cursor-pointer">
@@ -427,8 +471,6 @@ const CreateProject = () => {
                         <option value="Suresh Iyer" className="text-black">Suresh Iyer</option>
                       </select>
                     </div>
-
-                    {/* Row 5 */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Sub Engineer</label>
                       <select required value={formData.subEngineer} onChange={e => setFormData({...formData, subEngineer: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm cursor-pointer">
@@ -439,24 +481,43 @@ const CreateProject = () => {
                       </select>
                     </div>
 
-                    {/* Housing Groups Checkboxes (Seamless Integration) */}
-                    <div className="md:col-span-3 pt-1">
-                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3 ml-1">Housing Groups (Select Multiple)</label>
-                      <div className="flex flex-wrap gap-x-6 gap-y-3 pl-1">
+                    {/* Housing Groups Checkboxes & Inputs */}
+                    <div className="md:col-span-4 pt-1">
+                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3 ml-1">Housing Groups & Required Units</label>
+                      <div className="flex flex-wrap gap-x-6 gap-y-4 pl-1">
                         {HOUSING_GROUPS.map(group => (
-                          <label key={group.id} className="flex items-center gap-2.5 cursor-pointer group">
-                            <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-colors ${formData.housingGroups.includes(group.id) ? 'bg-cghb-yellow border-cghb-yellow text-black' : 'border-cghb-border bg-[var(--color-bg-main)] group-hover:border-cghb-yellow/50'}`}>
-                              {formData.housingGroups.includes(group.id) && <Check size={12} strokeWidth={4} />}
-                            </div>
-                            <span className="text-[12px] font-bold text-[var(--color-text-main)] select-none" title={group.label}>{group.id}</span>
-                            {/* Hidden checkbox that triggers the state update */}
-                            <input 
-                              type="checkbox" 
-                              className="hidden" 
-                              checked={formData.housingGroups.includes(group.id)} 
-                              onChange={() => handleCheckboxChange(group.id)} 
-                            />
-                          </label>
+                          <div key={group.id} className="flex items-center gap-3">
+                            <label className="flex items-center gap-2.5 cursor-pointer group">
+                              <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-colors ${formData.housingGroups.includes(group.id) ? 'bg-cghb-yellow border-cghb-yellow text-black' : 'border-cghb-border bg-[var(--color-bg-main)] group-hover:border-cghb-yellow/50'}`}>
+                                {formData.housingGroups.includes(group.id) && <Check size={12} strokeWidth={4} />}
+                              </div>
+                              <span className="text-[12px] font-bold text-[var(--color-text-main)] select-none" title={group.label}>{group.id}</span>
+                              <input 
+                                type="checkbox" 
+                                className="hidden" 
+                                checked={formData.housingGroups.includes(group.id)} 
+                                onChange={() => handleCheckboxChange(group.id)} 
+                              />
+                            </label>
+                            
+                            {/* Dynamic Input Field for Houses Count */}
+                            <AnimatePresence>
+                              {formData.housingGroups.includes(group.id) && (
+                                <motion.input
+                                  initial={{ width: 0, opacity: 0 }}
+                                  animate={{ width: '80px', opacity: 1 }}
+                                  exit={{ width: 0, opacity: 0 }}
+                                  type="number"
+                                  min="1"
+                                  required
+                                  placeholder="Units"
+                                  value={formData.housingGroupCounts[group.id] || ''}
+                                  onChange={(e) => handleCountChange(group.id, parseInt(e.target.value))}
+                                  className="h-8 bg-[var(--color-bg-surface)] border border-cghb-border text-[12px] text-[var(--color-text-main)] rounded px-2 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm"
+                                />
+                              )}
+                            </AnimatePresence>
+                          </div>
                         ))}
                       </div>
                     </div>
