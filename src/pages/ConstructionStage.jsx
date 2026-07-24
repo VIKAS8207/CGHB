@@ -5,6 +5,10 @@ import {
   Search, Filter, HardHat, AlertCircle, Edit2, Eye, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
+// NEW: Imported Auth Tools
+import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../utils/roles';
+
 // Mock data reflecting your new housing categories
 const initialConstructionData = [
   { id: 'PRJ-1042', name: 'Atal Vihar Phase 2', status: 'Active', physicalProgress: 65, hig: 10, mig: 20, lig: 150, ews: 50, others: 0 },
@@ -15,14 +19,22 @@ const initialConstructionData = [
 
 const ConstructionStage = () => {
   const navigate = useNavigate(); 
+  const { userRole } = useAuth(); // NEW: Added to check user role
+  
   const [data, setData] = useState(initialConstructionData);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterProject, setFilterProject] = useState(''); // NEW: State for project filter dropdown
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const filteredData = data.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  // NEW: Updated to filter by both search term and the new dropdown filter
+  const filteredData = data.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterProject === '' || p.name === filterProject;
+    return matchesSearch && matchesFilter;
+  });
   
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -30,6 +42,9 @@ const ConstructionStage = () => {
   const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Extract unique project names for the dropdown
+  const uniqueProjectNames = [...new Set(data.map(item => item.name))];
 
   return (
     <div className="w-full max-w-[1400px] mx-auto animate-in fade-in duration-300 font-sans space-y-6">
@@ -57,9 +72,23 @@ const ConstructionStage = () => {
             className="w-full h-11 md:h-10 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg pl-10 pr-4 text-[13px] text-[var(--color-text-main)] focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" 
           />
         </div>
-        <button className="flex items-center justify-center gap-2 h-11 md:h-10 px-5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[13px] font-bold text-[var(--color-text-main)] shadow-sm hover:border-[var(--color-text-muted)] transition-all">
-          <Filter size={14} /> Filter
-        </button>
+        {/* NEW: Filter button replaced with a fully workable select dropdown */}
+        <div className="relative">
+          <Filter size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-main)] pointer-events-none" />
+          <select 
+            value={filterProject}
+            onChange={(e) => {setFilterProject(e.target.value); setCurrentPage(1);}}
+            className="flex items-center justify-center gap-2 h-11 md:h-10 pl-10 pr-8 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[13px] font-bold text-[var(--color-text-main)] shadow-sm hover:border-[var(--color-text-muted)] transition-all cursor-pointer appearance-none focus:outline-none focus:border-cghb-yellow"
+          >
+            <option value="">All Projects</option>
+            {uniqueProjectNames.map(name => (
+              <option key={name} value={name} className="text-black">{name}</option>
+            ))}
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-muted)]">
+            <ChevronRight size={14} className="rotate-90" />
+          </div>
+        </div>
       </div>
 
       {/* MASTER DATA TABLE */}
@@ -76,13 +105,17 @@ const ConstructionStage = () => {
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">LIG</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">EWS</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">Others</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[12%] border-l border-cghb-border">Action</th>
+                
+                {/* NEW: Action header only visible to engineers */}
+                {userRole === ROLES.ENGINEER && (
+                  <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[12%] border-l border-cghb-border">Action</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-cghb-border/50">
               <AnimatePresence>
                 {currentData.length === 0 ? (
-                  <tr><td colSpan="9" className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No projects found in this stage.</td></tr>
+                  <tr><td colSpan={userRole === ROLES.ENGINEER ? "9" : "8"} className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No projects found in this stage.</td></tr>
                 ) : (
                   currentData.map((p, index) => (
                     <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={p.id} className="hover:bg-cghb-border/5 transition-colors">
@@ -115,23 +148,26 @@ const ConstructionStage = () => {
                         </td>
                       ))}
 
-                      <td className="px-4 py-4 text-center border-l border-cghb-border/50">
-                        {p.status === 'Completed' ? (
-                          <button 
-                            onClick={() => navigate(`/dashboard/construction-stage/${p.id}?mode=view`)}
-                            className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-blue-500/10 text-blue-500 rounded-lg text-[11px] font-bold uppercase tracking-wider hover:bg-blue-500 hover:text-white transition-all shadow-sm border border-blue-500/20"
-                          >
-                            <Eye size={14} /> View Log
-                          </button>
-                        ) : (
-                          <button 
-                            onClick={() => navigate(`/dashboard/construction-stage/${p.id}`)}
-                            className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-cghb-yellow text-black rounded-lg text-[11px] font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-md"
-                          >
-                            <Edit2 size={14} /> Update
-                          </button>
-                        )}
-                      </td>
+                      {/* NEW: Action cell only visible to engineers */}
+                      {userRole === ROLES.ENGINEER && (
+                        <td className="px-4 py-4 text-center border-l border-cghb-border/50">
+                          {p.status === 'Completed' ? (
+                            <button 
+                              onClick={() => navigate(`/dashboard/construction-stage/${p.id}?mode=view`)}
+                              className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-blue-500/10 text-blue-500 rounded-lg text-[11px] font-bold uppercase tracking-wider hover:bg-blue-500 hover:text-white transition-all shadow-sm border border-blue-500/20"
+                            >
+                              <Eye size={14} /> View Log
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => navigate(`/dashboard/construction-stage/${p.id}`)}
+                              className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-cghb-yellow text-black rounded-lg text-[11px] font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-md"
+                            >
+                              <Edit2 size={14} /> Update
+                            </button>
+                          )}
+                        </td>
+                      )}
 
                     </motion.tr>
                   ))

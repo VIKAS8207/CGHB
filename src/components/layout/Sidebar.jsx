@@ -70,8 +70,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
       {/* 2. NAVIGATION LINKS - STRICTLY REORDERED */}
       <nav className={`flex-1 px-4 space-y-1 overflow-x-hidden overflow-y-auto ${isMobileOpen ? 'pt-8' : 'pt-6'}`}>
         
-        {/* 1. Dashboard */}
-        {hasAccess('dashboard') && (
+        {/* 1. Dashboard - Hidden for Engineer */}
+        {hasAccess('dashboard') && userRole !== ROLES.ENGINEER && (
           <NavItem onClick={handleMobileClose} to="/dashboard" icon={<Home size={18} />} label="Dashboard" active={location.pathname === '/dashboard'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
         
@@ -103,8 +103,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             icon={<ClipboardList size={18} />} label="Tender" collapsed={isMobileOpen ? false : isCollapsed} forceExpand={() => setIsCollapsed(false)} currentPath={location.pathname}
             onLinkClick={handleMobileClose}
             items={[
-              { label: 'NIT Approval', to: '/dashboard/tender/nit-approval' },
               { label: 'Advertisement', to: '/dashboard/tender/advertisement' },
+              { label: 'NIT Approval', to: '/dashboard/tender/nit-approval' }, 
               { label: 'Tender Rate Approval', to: '/dashboard/tender/rate-approval' },
             ]}
           />
@@ -115,10 +115,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           <NavItem onClick={handleMobileClose} to="/dashboard/site-visit" icon={<HardHat size={18} />} label="Site Visit" active={location.pathname === '/dashboard/site-visit'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
-        {/* 7. Work Progress */}
-        {hasAccess('work-progress') && (
-          <NavItem onClick={handleMobileClose} to="/dashboard/work-progress" icon={<Activity size={18} />} label="Work Progress" active={location.pathname === '/dashboard/work-progress'} collapsed={isMobileOpen ? false : isCollapsed} />
-        )}
+        
 
         {/* 7.5 Construction Stage */}
         {hasAccess('construction-stage') && (
@@ -138,13 +135,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           />
         )}
 
-        {/* 8. Documentation */}
-        {hasAccess('documentation') && (
-          <NavItem onClick={handleMobileClose} to="/dashboard/documentation" icon={<Files size={18} />} label="Documentation" active={location.pathname === '/dashboard/documentation'} collapsed={isMobileOpen ? false : isCollapsed} />
-        )}
+        
 
-        {/* 9. Schemes */}
-        {hasAccess('schemes') && (
+        {/* 9. Schemes - Hidden for Commissioner and Engineer */}
+        {hasAccess('schemes') && userRole !== ROLES.COMMISSIONER && userRole !== ROLES.ENGINEER && (
           <NavItem onClick={handleMobileClose} to="/dashboard/schemes" icon={<LayoutGrid size={18} />} label="Schemes" active={location.pathname === '/dashboard/schemes'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
@@ -153,18 +147,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           <NavItem onClick={handleMobileClose} to="/dashboard/engineers" icon={<Users size={18} />} label="Engineers" active={location.pathname === '/dashboard/engineers'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
-        {/* 11. Reports */}
-        {hasAccess('reports') && (
-          <NavAccordion 
-            icon={<PieChart size={18} />} label="Reports" collapsed={isMobileOpen ? false : isCollapsed} forceExpand={() => setIsCollapsed(false)} currentPath={location.pathname}
-            onLinkClick={handleMobileClose}
-            items={[
-              { label: 'Site Reports', to: '/dashboard/reports/site' },
-              { label: 'Financial Reports', to: '/dashboard/reports/financial' },
-              { label: 'Audit Logs', to: '/dashboard/reports/audit' },
-            ]}
-          />
-        )}
+        
 
       </nav>
 

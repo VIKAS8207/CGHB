@@ -480,6 +480,10 @@ const CreateProject = () => {
                         <option value="Neha Gupta" className="text-black">Neha Gupta</option>
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">total fund allocated</label>
+                      <input type="text" required placeholder="e.g., 100,000,00" value={formData.contractor} onChange={e => setFormData({...formData, contractor: e.target.value})} className="w-full h-11 bg-[var(--color-bg-surface)] border border-cghb-border text-[var(--color-text-main)] text-[13px] rounded-lg px-4 focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
+                    </div>
 
                     {/* Housing Groups Checkboxes & Inputs */}
                     <div className="md:col-span-4 pt-1">

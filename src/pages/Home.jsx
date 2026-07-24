@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom'; // NEW: Imported useNavigate for the redirect
 import { 
   Building2, FileSignature, ShieldCheck, 
   Clock, AlertTriangle, TrendingUp, 
@@ -91,12 +92,23 @@ const ProgressBar = ({ value, colorClass = "bg-cghb-yellow" }) => (
 
 const Home = () => {
   const { userRole, user } = useAuth();
+  const navigate = useNavigate(); // NEW: Hook initialized
+  
+  // NEW: SECURITY BOUNCER - Instantly redirects Engineers away from the Dashboard
+  useEffect(() => {
+    if (userRole === ROLES.ENGINEER) {
+      navigate('/dashboard/site-visit', { replace: true });
+    }
+  }, [userRole, navigate]);
   
   const [time, setTime] = useState(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })), 60000);
     return () => clearInterval(timer);
   }, []);
+
+  // NEW: Prevent any accidental UI flash of the Dashboard for Engineers before the redirect hits
+  if (userRole === ROLES.ENGINEER) return null;
 
   return (
     <div className="w-full max-w-[1400px] mx-auto animate-in fade-in duration-500 font-sans relative z-10 space-y-6">

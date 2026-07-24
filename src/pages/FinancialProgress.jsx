@@ -6,6 +6,10 @@ import {
   MapPin, PieChart, Activity, AlertCircle, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
+// NEW: Imported Auth Tools
+import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../utils/roles';
+
 // Mock Database for Financial Overview
 export const mockFinancialProjects = [
   { 
@@ -28,16 +32,23 @@ export const mockFinancialProjects = [
 
 const FinancialProgress = () => {
   const navigate = useNavigate();
+  const { userRole } = useAuth(); // NEW: Added to check user role
+  
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterProject, setFilterProject] = useState(''); // NEW: State for project filter dropdown
+  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   // --- FILTER & PAGINATION ---
-  const searchResults = mockFinancialProjects.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.district.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // NEW: Updated to filter by both search term and the new dropdown filter
+  const searchResults = mockFinancialProjects.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          p.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          p.district.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterProject === '' || p.name === filterProject;
+    return matchesSearch && matchesFilter;
+  });
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -45,6 +56,9 @@ const FinancialProgress = () => {
   const totalPages = Math.ceil(searchResults.length / itemsPerPage) || 1;
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Extract unique project names for the dropdown
+  const uniqueProjectNames = [...new Set(mockFinancialProjects.map(item => item.name))];
 
   // --- KPI CALCULATIONS ---
   const totalStateDeclared = mockFinancialProjects.reduce((sum, p) => sum + p.totalDeclared, 0);
@@ -69,7 +83,7 @@ const FinancialProgress = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-panel p-5 rounded-xl border-t-4 border-t-cghb-yellow flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Total State Budget Declared</p>
+            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Total Allocated Funds Declared</p>
             <h3 className="text-3xl font-black text-[var(--color-text-main)]">₹{totalStateDeclared.toFixed(2)} <span className="text-[14px] text-[var(--color-text-muted)]">Cr</span></h3>
           </div>
           <div className="w-12 h-12 bg-cghb-yellow/10 text-cghb-yellow rounded-full flex items-center justify-center">
@@ -102,9 +116,24 @@ const FinancialProgress = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={14} />
           <input type="text" placeholder="Search Project Name, District, or ID..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full h-11 md:h-10 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg pl-10 pr-4 text-[13px] text-[var(--color-text-main)] focus:outline-none focus:border-cghb-yellow transition-all shadow-sm" />
         </div>
-        <button className="flex items-center justify-center gap-2 h-11 md:h-10 px-5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[13px] font-bold text-[var(--color-text-main)] shadow-sm hover:border-[var(--color-text-muted)] transition-all">
-          <Filter size={14} /> Filter
-        </button>
+        
+        {/* NEW: Filter button replaced with a fully workable select dropdown */}
+        <div className="relative">
+          <Filter size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-main)] pointer-events-none" />
+          <select 
+            value={filterProject}
+            onChange={(e) => {setFilterProject(e.target.value); setCurrentPage(1);}}
+            className="flex items-center justify-center gap-2 h-11 md:h-10 pl-10 pr-8 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[13px] font-bold text-[var(--color-text-main)] shadow-sm hover:border-[var(--color-text-muted)] transition-all cursor-pointer appearance-none focus:outline-none focus:border-cghb-yellow"
+          >
+            <option value="">All Projects</option>
+            {uniqueProjectNames.map(name => (
+              <option key={name} value={name} className="text-black">{name}</option>
+            ))}
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-muted)]">
+            <ChevronRight size={14} className="rotate-90" />
+          </div>
+        </div>
       </div>
 
       {/* --- MASTER TABLE --- */}
@@ -119,13 +148,17 @@ const FinancialProgress = () => {
                 <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[15%]">Declared Budget</th>
                 <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[15%]">Total Released</th>
                 <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[18%]">Financial Progress</th>
-                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[15%] border-l border-cghb-border">Action</th>
+                
+                {/* NEW: Action header only visible to non-commissioners */}
+                {userRole !== ROLES.COMMISSIONER && (
+                  <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[15%] border-l border-cghb-border">Action</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-cghb-border/50">
               <AnimatePresence>
                 {currentProjects.length === 0 ? (
-                  <tr><td colSpan="7" className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No financial records found.</td></tr>
+                  <tr><td colSpan={userRole !== ROLES.COMMISSIONER ? "7" : "6"} className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No financial records found.</td></tr>
                 ) : (
                   currentProjects.map((project, index) => {
                     const percentage = project.totalDeclared > 0 ? Math.round((project.totalReleased / project.totalDeclared) * 100) : 0;
@@ -152,11 +185,14 @@ const FinancialProgress = () => {
                           </div>
                         </td>
                         
-                        <td className="px-4 py-4 text-center border-l border-cghb-border/50">
-                          <button className="mx-auto flex items-center justify-center gap-2 px-4 py-2 bg-cghb-yellow text-black rounded-lg text-[11px] font-bold uppercase tracking-wider group-hover:scale-105 transition-all shadow-md">
-                            Manage Funds <ArrowRight size={14} />
-                          </button>
-                        </td>
+                        {/* NEW: Action cell only visible to non-commissioners */}
+                        {userRole !== ROLES.COMMISSIONER && (
+                          <td className="px-4 py-4 text-center border-l border-cghb-border/50">
+                            <button className="mx-auto flex items-center justify-center gap-2 px-4 py-2 bg-cghb-yellow text-black rounded-lg text-[11px] font-bold uppercase tracking-wider group-hover:scale-105 transition-all shadow-md">
+                              Manage Funds <ArrowRight size={14} />
+                            </button>
+                          </td>
+                        )}
                       </motion.tr>
                     );
                   })
