@@ -3,14 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Search, Filter, ChevronLeft, ChevronRight, 
   X, MapPin, Save, Building2, Eye, Edit, Trash2, 
-  AlertCircle, Stamp, MoreVertical, UploadCloud, Check, Download, FileText
+  AlertCircle, Stamp, MoreVertical, UploadCloud, Check, 
+  Download, FileText
 } from 'lucide-react';
 
 // Import Auth Tools
 import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../utils/roles';
 
-// Mock Data updated with hasDoc property
+// Mock Data
 const initialProjects = [
   { id: 'PRJ-1042', workType: 'Construction', sanctionYear: '2025-26', municipality: 'Raipur Nagar Nigam', ward: 'Ward 12', projectName: 'Atal Vihar Phase 2', agency: 'CGHB Urban', scheme: 'Atal Vihar Yojana', description: '50 LIG Houses', physicalStatus: 'In Progress', approvedBy: 'Board Resolution', lastModified: '12 May 2026', hasDoc: true },
   { id: 'PRJ-1043', workType: 'Development', sanctionYear: '2025-26', municipality: 'Arang Block', ward: 'GP Sector 3', projectName: 'Nava Raipur EWS Block C', agency: 'SUDA', scheme: 'EWS Housing', description: 'EWS Multi-story Block', physicalStatus: 'Tender Floated', approvedBy: 'State Government', lastModified: '10 May 2026', hasDoc: true },
@@ -24,8 +25,9 @@ const CreateProject = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [viewingProject, setViewingProject] = useState(null); 
   
-  // Track which 3-dot dropdown is currently open
+  // Track dropdown with coordinates to render outside overflow-hidden table
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   // File Upload State
@@ -67,7 +69,6 @@ const CreateProject = () => {
       setCurrentPage(1);
     }
     
-    // Reset Form
     setFormData({ workType: '', sanctionYear: '', municipality: '', ward: '', projectName: '', agency: '', scheme: '', description: '', physicalStatus: '', approvedBy: '' });
     setFileName('');
     setIsFormOpen(false);
@@ -91,15 +92,19 @@ const CreateProject = () => {
     }
   };
 
-  const handleView = (name) => {
-    alert(`Opening Detailed View for ${name}`);
+  const handleView = (project) => {
+    setViewingProject(project);
   };
 
-  // Close dropdown when clicking anywhere else
+  // Handle closing fixed dropdown on click outside or scroll
   useEffect(() => {
-    const handleClickOutside = () => setActiveDropdown(null);
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    const closeDropdown = () => setActiveDropdown(null);
+    document.addEventListener("click", closeDropdown);
+    window.addEventListener("scroll", closeDropdown, true); 
+    return () => {
+      document.removeEventListener("click", closeDropdown);
+      window.removeEventListener("scroll", closeDropdown, true);
+    };
   }, []);
 
   // --- FILTER & SORT LOGIC ---
@@ -118,6 +123,17 @@ const CreateProject = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // Helper for derived status styling
+  const getDerivedStatusStyle = (hasDoc) => {
+    return hasDoc 
+      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
+      : 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
+  };
+
+  const getDerivedStatusText = (hasDoc) => {
+    return hasDoc ? 'Approved' : 'Waiting for Approval';
+  };
+
   return (
     <div className="w-full max-w-[1400px] mx-auto animate-in fade-in duration-300 font-sans relative z-10 space-y-6">
       
@@ -134,7 +150,6 @@ const CreateProject = () => {
           </p>
         </div>
         
-        {/* RIGHT ALIGNED BUTTON: Opens the form engine */}
         {userRole !== ROLES.COMMISSIONER && (
           <button 
             onClick={() => { setIsFormOpen(!isFormOpen); if(isFormOpen) { setEditingId(null); setFileName(''); } }}
@@ -146,7 +161,7 @@ const CreateProject = () => {
         )}
       </div>
 
-      {/* --- GENERIC KPI DASHBOARD --- */}
+      {/* --- KPI DASHBOARD --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-panel p-5 rounded-xl border-t-4 border-t-cghb-yellow flex items-center justify-between">
           <div>
@@ -170,8 +185,10 @@ const CreateProject = () => {
         </div>
         <div className="glass-panel p-5 rounded-xl border-t-4 border-t-emerald-500 flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Active Mandates</p>
-            <h3 className="text-3xl font-black text-[var(--color-text-main)]">100%</h3>
+            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Approved Projects</p>
+            <h3 className="text-3xl font-black text-[var(--color-text-main)]">
+                {projects.filter(p => p.hasDoc).length}
+            </h3>
           </div>
           <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center">
             <Stamp size={24} />
@@ -183,7 +200,7 @@ const CreateProject = () => {
       {userRole !== ROLES.COMMISSIONER && (
         <AnimatePresence>
           {isFormOpen && (
-            <motion.div
+             <motion.div
               initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }}
               className="overflow-hidden w-full"
             >
@@ -201,7 +218,6 @@ const CreateProject = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  
                   {/* Row 1: Basic Info */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
                     <div className="md:col-span-2">
@@ -299,83 +315,68 @@ const CreateProject = () => {
         </button>
       </div>
 
-      {/* --- DATA TABLE (MODERN & PROFESSIONAL) --- */}
+      {/* --- DATA TABLE --- */}
       <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden">
-        <div className="w-full">
-          <table className="w-full table-fixed text-left whitespace-nowrap">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[1000px] table-fixed text-left whitespace-nowrap relative">
             <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
               <tr>
-                {/* Total Widths mapped to exactly 100% */}
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[3%]">S.No</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Work Type</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[6%]">Sanc. Yr</th>
-                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Municipality</th>
-                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%]">GP/Ward</th>
-                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Project Name</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Municipality</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%]">Project Name</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Agency</th>
-                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Scheme</th>
-                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Description</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%]">Description</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Status</th>
-                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[9%]">Approved By</th>
-                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%]">Modified</th>
-                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[4%] border-l border-cghb-border">Doc</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%] text-center">Approval</th>
+                <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[8%]">Modified</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[4%]">Action</th>
               </tr>
             </thead>
             <tbody>
               <AnimatePresence>
                 {currentProjects.map((project, index) => (
-                  // STRICTLY NO HOVER STYLES HERE
-                  <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={project.id} className="bg-transparent border-b border-cghb-border/50 last:border-0">
-                    <td className="px-2 py-3.5 text-center text-[11px] font-bold text-[var(--color-text-muted)] truncate" title={indexOfFirstItem + index + 1}>{indexOfFirstItem + index + 1}</td>
+                  <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={project.id} className="bg-transparent border-b border-cghb-border/50 last:border-0 hover:bg-cghb-border/5 transition-colors">
+                    <td className="px-2 py-3.5 text-center text-[11px] font-bold text-[var(--color-text-muted)] truncate">{indexOfFirstItem + index + 1}</td>
                     <td className="px-2 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.workType}>{project.workType}</td>
-                    <td className="px-2 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.sanctionYear}>{project.sanctionYear}</td>
+                    <td className="px-2 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate">{project.sanctionYear}</td>
                     <td className="px-2 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.municipality}>{project.municipality}</td>
-                    <td className="px-2 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.ward}>{project.ward}</td>
                     <td className="px-2 py-3.5 text-[11px] font-bold text-[var(--color-text-main)] truncate" title={project.projectName}>{project.projectName}</td>
                     <td className="px-2 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.agency}>{project.agency}</td>
-                    <td className="px-2 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.scheme}>{project.scheme}</td>
                     <td className="px-2 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.description}>{project.description}</td>
                     <td className="px-2 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={project.physicalStatus}>{project.physicalStatus}</td>
-                    <td className="px-2 py-3.5 text-[11px] font-bold text-[var(--color-text-main)] truncate" title={project.approvedBy}>{project.approvedBy}</td>
-                    <td className="px-2 py-3.5 text-[10px] font-medium text-[var(--color-text-muted)] truncate" title={project.lastModified}>{project.lastModified}</td>
                     
-                    {/* Document Download Column */}
-                    <td className="px-2 py-3.5 text-center border-l border-cghb-border/50">
-                      {project.hasDoc 
-                        ? <button className="mx-auto flex items-center justify-center text-[var(--color-text-muted)] hover:text-cghb-yellow transition-colors" title="Download Document"><Download size={14} strokeWidth={2.5}/></button> 
-                        : <span className="text-[var(--color-text-muted)]/30">-</span>}
+                    {/* Derived Approval Status */}
+                    <td className="px-2 py-3.5 text-center">
+                      <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${getDerivedStatusStyle(project.hasDoc)}`}>
+                        {getDerivedStatusText(project.hasDoc)}
+                      </span>
                     </td>
 
-                    {/* Actions: 3 Dots Dropdown */}
-                    <td className="px-2 py-3.5 text-center relative">
+                    <td className="px-2 py-3.5 text-[10px] font-medium text-[var(--color-text-muted)] truncate">{project.lastModified}</td>
+                    
+                    {/* Actions: Fixed Outside Dropdown Trigger */}
+                    <td className="px-2 py-3.5 text-center relative border-l border-cghb-border/50">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation(); 
-                          setActiveDropdown(activeDropdown === project.id ? null : project.id);
+                          if (activeDropdown?.id === project.id) {
+                            setActiveDropdown(null);
+                          } else {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setActiveDropdown({
+                              id: project.id,
+                              project: project,
+                              x: rect.left - 120, // offset to the left to align right edge
+                              y: rect.bottom + 4  // place right under the button
+                            });
+                          }
                         }} 
                         className="text-[var(--color-text-muted)] outline-none hover:text-[var(--color-text-main)]"
                       >
                         <MoreVertical size={16} />
                       </button>
-                      
-                      {activeDropdown === project.id && (
-                        <div className="absolute right-8 top-6 w-32 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-xl z-50 flex flex-col py-1.5 text-left">
-                          <button onClick={() => { handleView(project.projectName); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
-                            <Eye size={14} /> View
-                          </button>
-                          {userRole !== ROLES.COMMISSIONER && (
-                            <>
-                              <button onClick={() => { handleEdit(project); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-blue-500 flex items-center gap-2.5 hover:bg-blue-500/10">
-                                <Edit size={14} /> Edit
-                              </button>
-                              <button onClick={() => { handleDelete(project.id); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-red-500 flex items-center gap-2.5 hover:bg-red-500/10">
-                                <Trash2 size={14} /> Delete
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
                     </td>
                   </motion.tr>
                 ))}
@@ -391,7 +392,7 @@ const CreateProject = () => {
           )}
         </div>
 
-        {/* --- ALWAYS VISIBLE PAGINATION --- */}
+        {/* --- PAGINATION --- */}
         <div className="border-t border-cghb-border px-5 py-4 flex items-center justify-between bg-[var(--color-bg-surface)]">
           <span className="text-[12px] text-[var(--color-text-muted)] font-medium">
             Viewing <strong className="text-[var(--color-text-main)]">{filteredProjects.length === 0 ? 0 : indexOfFirstItem + 1}-{Math.min(indexOfLastItem, sortedProjects.length)}</strong> of <strong className="text-[var(--color-text-main)]">{sortedProjects.length}</strong>
@@ -410,8 +411,147 @@ const CreateProject = () => {
             </button>
           </div>
         </div>
-
       </div>
+
+      {/* --- FLOATING DROPDOWN RENDERED OUTSIDE (Fixes clipping issue) --- */}
+      <AnimatePresence>
+        {activeDropdown && (
+          <motion.div 
+            initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="fixed w-36 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-xl z-[200] flex flex-col py-1.5 text-left"
+            style={{ top: activeDropdown.y, left: activeDropdown.x }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button onClick={() => { handleView(activeDropdown.project); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
+              <Eye size={14} /> View
+            </button>
+            
+            {userRole !== ROLES.COMMISSIONER && (
+              <>
+                <button onClick={() => { handleEdit(activeDropdown.project); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-blue-500 flex items-center gap-2.5 hover:bg-blue-500/10">
+                  <Edit size={14} /> Edit
+                </button>
+                <button onClick={() => { handleDelete(activeDropdown.project.id); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-red-500 flex items-center gap-2.5 hover:bg-red-500/10">
+                  <Trash2 size={14} /> Delete
+                </button>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- FORM-STYLE VIEW MODAL --- */}
+      <AnimatePresence>
+        {viewingProject && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+            onClick={() => setViewingProject(null)}
+          >
+            <motion.div 
+              initial={{ y: 20, scale: 0.95 }} animate={{ y: 0, scale: 1 }} exit={{ y: 20, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--color-bg-main)] border border-cghb-border rounded-2xl shadow-2xl w-full max-w-[1000px] my-auto overflow-hidden relative"
+            >
+              <div className="flex items-center justify-between mb-2 border-b border-cghb-border/50 p-8 pb-5 bg-[var(--color-bg-surface)]">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-xl border bg-cghb-yellow/10 text-cghb-yellow border-cghb-yellow/20">
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-[var(--color-text-main)] tracking-tight">Project Details: {viewingProject.id}</h2>
+                    <p className="text-[12px] text-[var(--color-text-muted)] font-medium mt-0.5">Read-only view of sanctioned project details.</p>
+                  </div>
+                </div>
+                <button onClick={() => setViewingProject(null)} className="p-2 text-[var(--color-text-muted)] hover:bg-cghb-border/20 rounded-full transition-colors self-start">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="p-8 space-y-6">
+                {/* Row 1: Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Project Name</label>
+                    <input type="text" readOnly value={viewingProject.projectName} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Type of Work</label>
+                    <input type="text" readOnly value={viewingProject.workType} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Sanction Year</label>
+                    <input type="text" readOnly value={viewingProject.sanctionYear} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                </div>
+
+                {/* Row 2: Location Data */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Municipality / Block</label>
+                    <input type="text" readOnly value={viewingProject.municipality} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">GP / Ward Name</label>
+                    <input type="text" readOnly value={viewingProject.ward} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Executing Agency</label>
+                    <input type="text" readOnly value={viewingProject.agency} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                </div>
+
+                {/* Row 3: Details */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Scheme</label>
+                    <input type="text" readOnly value={viewingProject.scheme} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Work Description</label>
+                    <input type="text" readOnly value={viewingProject.description} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Physical Status</label>
+                    <input type="text" readOnly value={viewingProject.physicalStatus} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                </div>
+
+                {/* Row 4: Approval Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Approved By</label>
+                    <input type="text" readOnly value={viewingProject.approvedBy} className="w-full h-11 bg-[var(--color-bg-surface)]/50 border border-cghb-border/50 text-[var(--color-text-main)] text-[13px] rounded-lg px-4 cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Approval Status</label>
+                    <div className={`w-full h-11 flex items-center px-4 rounded-lg border font-bold text-[13px] ${getDerivedStatusStyle(viewingProject.hasDoc)}`}>
+                       {getDerivedStatusText(viewingProject.hasDoc)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Optional Document Download Section */}
+                <div className="pt-4 mt-2 border-t border-cghb-border/50 flex justify-between items-center">
+                  <span className="text-[11px] text-[var(--color-text-muted)] font-medium">Last modified: {viewingProject.lastModified}</span>
+                  
+                  {viewingProject.hasDoc ? (
+                    <button className="flex items-center gap-2 px-6 py-2.5 bg-[var(--color-bg-surface)] border border-cghb-border hover:border-cghb-yellow hover:text-cghb-yellow text-[var(--color-text-main)] text-[13px] font-bold uppercase tracking-wider rounded-lg transition-all shadow-sm">
+                      <Download size={16} /> Download Document
+                    </button>
+                  ) : (
+                    <span className="text-[12px] font-medium text-[var(--color-text-muted)] flex items-center gap-2 bg-[var(--color-bg-surface)] px-4 py-2.5 rounded-lg border border-dashed border-cghb-border/50">
+                       <AlertCircle size={14} /> No Document Available
+                    </span>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

@@ -3,14 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileSignature, Search, Filter, Calendar, MapPin, 
   Plus, Edit, Trash2, Eye, UploadCloud, X, Save, 
-  ChevronLeft, ChevronRight, MoreVertical, Download, Check
+  ChevronLeft, ChevronRight, MoreVertical, Download, Check, AlertCircle,
+  ArrowLeft, LayoutList, FileText
 } from 'lucide-react';
 
 // Import Auth Tools
 import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../utils/roles';
 
-// Mock Database for NITs
+// Mock Database for NITs (Updated id 2 to hasDoc: false to show the Orange badge)
 const initialNits = [
   { 
     id: '1', refNo: 'CGHB/RPR/26/042', description: 'Construction of 50 LIG Houses at Phase 2', 
@@ -18,7 +19,7 @@ const initialNits = [
   },
   { 
     id: '2', refNo: 'CGHB/BSP/26/089', description: 'MIG Heights Boundary Wall Construction', 
-    location: 'Bilaspur', lastDate: '2026-05-25', openingDate: '2026-05-27', awardDate: '2026-06-10', approvedBy: 'Board Resolution', hasDoc: true 
+    location: 'Bilaspur', lastDate: '2026-05-25', openingDate: '2026-05-27', awardDate: '2026-06-10', approvedBy: 'Board Resolution', hasDoc: false 
   },
   { 
     id: '3', refNo: 'SUDA/RPR/26/011', description: 'Nava Raipur EWS Water Supply Pipeline', 
@@ -32,9 +33,12 @@ const NitApproval = () => {
   const [nits, setNits] = useState(initialNits);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Track which 3-dot dropdown is currently open
+  // Track which 3-dot dropdown is currently open (Stores object with id and coordinates)
   const [activeDropdown, setActiveDropdown] = useState(null);
   
+  // View Details State
+  const [viewingNit, setViewingNit] = useState(null);
+
   // Gateway Selection State
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
@@ -73,7 +77,7 @@ const NitApproval = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingId) {
-      setNits(nits.map(n => n.id === editingId ? { ...n, ...formData } : n));
+      setNits(nits.map(n => n.id === editingId ? { ...n, ...formData, hasDoc: fileName !== '' || n.hasDoc } : n));
       setEditingId(null);
     } else {
       const newNit = {
@@ -97,7 +101,7 @@ const NitApproval = () => {
       refNo: nit.refNo, description: nit.description, location: nit.location, 
       lastDate: nit.lastDate, openingDate: nit.openingDate, awardDate: nit.awardDate, approvedBy: nit.approvedBy
     });
-    setFileName('existing_document.pdf'); // Mocking an already uploaded file state
+    setFileName(nit.hasDoc ? 'existing_document.pdf' : ''); // Mock existing document if present
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -108,15 +112,24 @@ const NitApproval = () => {
     }
   };
 
-  const handleView = (refNo) => {
-    alert(`Opening Detailed NIT View for ${refNo}`);
+  const handleView = (nit) => {
+    setViewingNit(nit);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBack = () => {
+    setViewingNit(null);
   };
 
   // Close dropdown when clicking anywhere else
   useEffect(() => {
     const handleClickOutside = () => setActiveDropdown(null);
     document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    window.addEventListener("scroll", handleClickOutside, true); 
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+      window.removeEventListener("scroll", handleClickOutside, true);
+    };
   }, []);
 
   // --- FILTER & PAGINATION ---
@@ -134,6 +147,79 @@ const NitApproval = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+
+  // ============================================================================
+  // VIEW 2: PROFILE/DETAILS PAGE
+  // ============================================================================
+  if (viewingNit) {
+    return (
+      <div className="w-full max-w-[1400px] mx-auto animate-in fade-in slide-in-from-right-4 duration-300 font-sans relative z-10 space-y-6">
+        <div className="flex items-center gap-4 border-b border-cghb-border pb-6">
+          <button onClick={handleBack} className="p-2.5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-cghb-border/20 transition-all shadow-sm">
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-[var(--color-text-main)] uppercase">NIT <span className="text-cghb-yellow">Details</span></h1>
+            <p className="text-[13px] text-[var(--color-text-muted)] font-medium mt-1 flex items-center gap-2">
+              <LayoutList size={14} className="text-cghb-yellow" /> Tender Ref: {viewingNit.refNo} <span className="opacity-50">|</span> Location: {viewingNit.location}
+            </p>
+          </div>
+        </div>
+
+        <div className="glass-panel p-8 md:p-10 rounded-xl border border-cghb-border shadow-sm space-y-10">
+          <div>
+            <h3 className="text-[12px] font-black text-cghb-yellow uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">1. Core Tender Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm md:col-span-4">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Work Description</span>
+                <span className="block text-[15px] font-black text-[var(--color-text-main)]">{viewingNit.description}</span>
+              </div>
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm md:col-span-2">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">NIT Reference No.</span>
+                <span className="block text-[15px] font-mono font-black text-[var(--color-text-main)]">{viewingNit.refNo}</span>
+              </div>
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm md:col-span-2">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Location / District</span>
+                <span className="block text-[15px] font-bold text-[var(--color-text-main)]">{viewingNit.location}</span>
+              </div>
+              <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Last Submission Date</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingNit.lastDate}</span></div>
+              <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Bid Opening Date</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingNit.openingDate}</span></div>
+              <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Estimated Award Date</span><span className="block text-[14px] font-medium text-orange-500">{viewingNit.awardDate}</span></div>
+              <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Approved By</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingNit.approvedBy}</span></div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-[12px] font-black text-emerald-500 uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">2. Official Document Attached</h3>
+            <div className="grid grid-cols-1 gap-4">
+              {viewingNit.hasDoc ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-[var(--color-bg-main)] border border-cghb-border/50 rounded-lg shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 flex items-center justify-center rounded-lg shrink-0"><FileText size={18}/></div>
+                    <div>
+                      <h4 className="text-[14px] font-bold text-[var(--color-text-main)]">NIT_Document_Copy.pdf</h4>
+                      <p className="text-[12px] text-[var(--color-text-muted)]">Official published NIT document</p>
+                    </div>
+                  </div>
+                  <button className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[12px] font-bold text-[var(--color-text-main)] hover:border-emerald-500 hover:text-emerald-500 transition-all shadow-sm">
+                    <Download size={14}/> Download
+                  </button>
+                </div>
+              ) : (
+                <div className="p-6 bg-orange-500/10 border border-orange-500/20 rounded-lg text-orange-600 text-[13px] font-bold flex items-center gap-2">
+                  <AlertCircle size={16}/> No document has been uploaded for this NIT yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // VIEW 1: MAIN DASHBOARD & DIRECTORY
+  // ============================================================================
   return (
     <div className="w-full max-w-[1400px] mx-auto animate-in fade-in duration-300 font-sans relative z-10 space-y-6">
       
@@ -150,8 +236,6 @@ const NitApproval = () => {
           </p>
         </div>
       </div>
-
-      
 
       {/* --- MASSIVE NIT FORM (Hidden for Commissioner) --- */}
       {userRole !== ROLES.COMMISSIONER && (
@@ -222,7 +306,7 @@ const NitApproval = () => {
                     {/* Functional Document Upload */}
                     <div>
                       <label className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 ml-1">Final NIT Document</label>
-                      <label className={`w-full h-11 border border-dashed rounded-lg flex items-center justify-center text-[12px] font-bold cursor-pointer transition-all ${fileName ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600' : 'border-cghb-border text-[var(--color-text-muted)] bg-cghb-border/5 hover:border-cghb-yellow hover:text-cghb-yellow'}`}>
+                      <label className={`w-full h-11 border border-dashed rounded-lg flex items-center justify-center text-[12px] font-bold cursor-pointer transition-all shadow-sm ${fileName ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600' : 'border-cghb-border text-[var(--color-text-muted)] bg-[var(--color-bg-surface)] hover:border-cghb-yellow hover:text-cghb-yellow'}`}>
                         <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileChange} />
                         {fileName ? (
                           <span className="flex items-center gap-2 truncate px-3"><Check size={14} /> {fileName}</span>
@@ -255,13 +339,22 @@ const NitApproval = () => {
         <button className="flex items-center gap-2 h-10 px-5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[13px] font-bold text-[var(--color-text-main)] shadow-sm hover:border-[var(--color-text-muted)] transition-all">
           <Filter size={14} /> Filter
         </button>
+        {/* NEW: Standalone Add NIT button when form is closed */}
+        {userRole !== ROLES.COMMISSIONER && !isFormOpen && (
+          <button 
+            onClick={() => setIsFormOpen(true)}
+            className="flex items-center justify-center gap-2 h-10 px-5 bg-cghb-yellow text-black rounded-lg text-[13px] font-bold shadow-md hover:scale-105 transition-all"
+          >
+            <Plus size={14} /> Add NIT
+          </button>
+        )}
       </div>
 
-      {/* --- NIT MASTER TABLE (LOCKED UI) --- */}
-      <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden">
-        <div className="w-full">
+      {/* --- NIT MASTER TABLE --- */}
+      <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden relative">
+        <div className="w-full overflow-x-auto">
           {/* table-fixed explicitly prevents horizontal scrolling */}
-          <table className="w-full table-fixed text-left whitespace-nowrap">
+          <table className="w-full table-fixed text-left whitespace-nowrap min-w-[1300px]">
             <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
               <tr>
                 {/* Total Widths = 100% */}
@@ -273,83 +366,77 @@ const NitApproval = () => {
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Bid Opening</th>
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Award Date</th>
                 <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Approved By</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">Doc</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">Action</th>
+                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[14%]">Document Status</th>
+                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[6%] border-l border-cghb-border">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-cghb-border/50">
               <AnimatePresence>
-                {currentNits.map((nit, index) => (
-                  // STRICTLY NO HOVER STYLES HERE
-                  <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={nit.id} className="bg-transparent border-b border-cghb-border/50 last:border-0">
-                    <td className="px-3 py-3.5 text-center text-[11px] font-bold text-[var(--color-text-muted)] truncate" title={indexOfFirstItem + index + 1}>{indexOfFirstItem + index + 1}</td>
-                    <td className="px-3 py-3.5 font-mono text-[11px] font-bold text-[var(--color-text-main)] truncate" title={nit.refNo}>{nit.refNo}</td>
-                    <td className="px-3 py-3.5 text-[12px] font-bold text-[var(--color-text-main)] truncate" title={nit.description}>{nit.description}</td>
-                    
-                    <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={nit.location}>
-                      <span className="flex items-center gap-1"><MapPin size={10} className="text-[var(--color-text-muted)] shrink-0"/>{nit.location}</span>
-                    </td>
-                    
-                    <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={nit.lastDate}>
-                      <span className="flex items-center gap-1"><Calendar size={10} className="text-[var(--color-text-muted)] shrink-0"/>{nit.lastDate}</span>
-                    </td>
-                    <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={nit.openingDate}>{nit.openingDate}</td>
-                    <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={nit.awardDate}>{nit.awardDate}</td>
-                    <td className="px-3 py-3.5 text-[11px] font-bold text-[var(--color-text-main)] truncate" title={nit.approvedBy}>{nit.approvedBy}</td>
-                    
-                    <td className="px-3 py-3.5 text-center">
-                      {nit.hasDoc 
-                        ? <button className="mx-auto flex items-center justify-center text-[var(--color-text-muted)] hover:text-cghb-yellow transition-colors" title="Download Document"><Download size={16} strokeWidth={2.5}/></button> 
-                        : <span className="text-[var(--color-text-muted)]/30">-</span>}
-                    </td>
-
-                    {/* Actions: 3 Dots Dropdown */}
-                    <td className="px-3 py-3.5 text-center relative">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation(); 
-                          setActiveDropdown(activeDropdown === nit.id ? null : nit.id);
-                        }} 
-                        className="text-[var(--color-text-muted)] outline-none hover:text-[var(--color-text-main)]"
-                      >
-                        <MoreVertical size={16} />
-                      </button>
+                {currentNits.length === 0 ? (
+                  <tr><td colSpan="10" className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><FileSignature size={32} className="mx-auto mb-3 opacity-30" />No NIT records found.</td></tr>
+                ) : (
+                  currentNits.map((nit, index) => (
+                    // STRICTLY NO HOVER STYLES HERE
+                    <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={nit.id} className="bg-transparent border-b border-cghb-border/50 last:border-0">
+                      <td className="px-3 py-3.5 text-center text-[11px] font-bold text-[var(--color-text-muted)] truncate" title={indexOfFirstItem + index + 1}>{indexOfFirstItem + index + 1}</td>
+                      <td className="px-3 py-3.5 font-mono text-[11px] font-bold text-[var(--color-text-main)] truncate" title={nit.refNo}>{nit.refNo}</td>
+                      <td className="px-3 py-3.5 text-[12px] font-bold text-[var(--color-text-main)] truncate" title={nit.description}>{nit.description}</td>
                       
-                      {/* Dropdown Menu */}
-                      {activeDropdown === nit.id && (
-                        <div className="absolute right-8 top-6 w-32 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-xl z-50 flex flex-col py-1.5 text-left">
-                          <button onClick={() => { handleView(nit.refNo); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
-                            <Eye size={14} /> View
-                          </button>
-                          {userRole !== ROLES.COMMISSIONER && (
-                            <>
-                              <button onClick={() => { handleEdit(nit); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-blue-500 flex items-center gap-2.5 hover:bg-blue-500/10">
-                                <Edit size={14} /> Edit
-                              </button>
-                              <button onClick={() => { handleDelete(nit.id); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-red-500 flex items-center gap-2.5 hover:bg-red-500/10">
-                                <Trash2 size={14} /> Delete
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </motion.tr>
-                ))}
+                      <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={nit.location}>
+                        <span className="flex items-center gap-1"><MapPin size={10} className="text-[var(--color-text-muted)] shrink-0"/>{nit.location}</span>
+                      </td>
+                      
+                      <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={nit.lastDate}>
+                        <span className="flex items-center gap-1"><Calendar size={10} className="text-[var(--color-text-muted)] shrink-0"/>{nit.lastDate}</span>
+                      </td>
+                      <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={nit.openingDate}>{nit.openingDate}</td>
+                      <td className="px-3 py-3.5 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={nit.awardDate}>{nit.awardDate}</td>
+                      <td className="px-3 py-3.5 text-[11px] font-bold text-[var(--color-text-main)] truncate" title={nit.approvedBy}>{nit.approvedBy}</td>
+                      
+                      {/* STYLISH DOCUMENT BADGES FROM REFERENCE */}
+                      <td className="px-3 py-3.5 text-center">
+                        {nit.hasDoc ? (
+                          <span className="mx-auto flex items-center justify-center gap-1.5 text-emerald-500 bg-emerald-500/10 px-4 py-1.5 rounded-lg text-[11px] font-bold border border-emerald-500/20 max-w-[120px] uppercase tracking-wider">
+                            <Check size={14}/> Approved
+                          </span>
+                        ) : (
+                          <span className="mx-auto flex items-center justify-center gap-1.5 text-orange-500 bg-orange-500/10 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-orange-500/20 max-w-[120px] uppercase tracking-wider">
+                            <AlertCircle size={12}/> Upload Req.
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions: 3 Dots Dropdown Trigger */}
+                      <td className="px-3 py-3.5 text-center relative border-l border-cghb-border/50">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation(); 
+                            if (activeDropdown?.id === nit.id) {
+                              setActiveDropdown(null);
+                            } else {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setActiveDropdown({
+                                id: nit.id,
+                                top: rect.bottom + 4,
+                                left: rect.left - 130 
+                              });
+                            }
+                          }} 
+                          className="text-[var(--color-text-muted)] outline-none hover:text-[var(--color-text-main)] p-1 rounded transition-colors hover:bg-cghb-border/20"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
               </AnimatePresence>
             </tbody>
           </table>
-
-          {currentNits.length === 0 && (
-            <div className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium flex flex-col items-center justify-center gap-3 border-t border-cghb-border/50">
-              <FileSignature size={32} className="text-[var(--color-text-muted)]/30" />
-              No NIT records found.
-            </div>
-          )}
         </div>
 
         {/* --- ALWAYS VISIBLE PAGINATION --- */}
-        <div className="border-t border-cghb-border px-5 py-4 flex items-center justify-between bg-[var(--color-bg-surface)]">
+        <div className="border-t border-cghb-border px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[var(--color-bg-surface)]">
           <span className="text-[12px] text-[var(--color-text-muted)] font-medium">
             Viewing <strong className="text-[var(--color-text-main)]">{filteredNits.length === 0 ? 0 : indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredNits.length)}</strong> of <strong className="text-[var(--color-text-main)]">{filteredNits.length}</strong>
           </span>
@@ -369,6 +456,37 @@ const NitApproval = () => {
         </div>
 
       </div>
+
+      {/* --- GLOBAL FIXED DROPDOWN MENU --- */}
+      <AnimatePresence>
+        {activeDropdown && (() => {
+          const nit = nits.find(r => r.id === activeDropdown.id);
+          if (!nit) return null;
+          return (
+            <motion.div 
+              initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}
+              style={{ position: 'fixed', top: activeDropdown.top, left: activeDropdown.left, zIndex: 9999 }}
+              className="w-40 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-2xl flex flex-col py-1.5 text-left"
+              onClick={(e) => e.stopPropagation()} 
+            >
+              <button onClick={() => { handleView(nit); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
+                <Eye size={14} /> View Details
+              </button>
+              {userRole !== ROLES.COMMISSIONER && (
+                <>
+                  <button onClick={() => { handleEdit(nit); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-blue-500 flex items-center gap-2.5 hover:bg-blue-500/10">
+                    <Edit size={14} /> Edit
+                  </button>
+                  <button onClick={() => { handleDelete(nit.id); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-red-500 flex items-center gap-2.5 hover:bg-red-500/10 border-t border-cghb-border/50 mt-1 pt-2.5">
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </>
+              )}
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
     </div>
   );
 };

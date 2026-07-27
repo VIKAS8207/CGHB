@@ -6,6 +6,10 @@ import {
   MoreVertical, Edit, Building2, HardHat, AlertCircle
 } from 'lucide-react';
 
+// NEW: Imported Auth Tools
+import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../utils/roles';
+
 // Mock Data updated to strictly match the schema from ConstructionStage
 const mockProjects = [
   { id: 'PRJ-1042', name: 'Atal Vihar Phase 2', status: 'Active', physicalProgress: 65, hig: 10, mig: 20, lig: 150, ews: 50, others: 0 },
@@ -20,6 +24,7 @@ const ALL_GROUPS = ['HIG', 'MIG', 'LIG', 'EWS', 'Others'];
 const ConstructionWorkshop = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { userRole } = useAuth(); // NEW: Added to check user role
 
   // Find the specific project, fallback to a default if not found
   const project = mockProjects.find(p => p.id === id) || { 
@@ -188,12 +193,15 @@ const ConstructionWorkshop = () => {
           <h3 className="text-[14px] font-bold text-[var(--color-text-main)] flex items-center gap-2">
             <HardHat size={16} className="text-cghb-yellow"/> {activeTab} Progress Log
           </h3>
-          <button 
-            onClick={addRow} 
-            className="flex items-center gap-2 px-4 py-2 bg-cghb-yellow text-black rounded-lg text-[12px] font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-sm"
-          >
-            <Plus size={14} /> Add Extra House
-          </button>
+          {/* NEW: Hide Add Extra House button for Commissioner */}
+          {userRole !== ROLES.COMMISSIONER && (
+            <button 
+              onClick={addRow} 
+              className="flex items-center gap-2 px-4 py-2 bg-cghb-yellow text-black rounded-lg text-[12px] font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-sm"
+            >
+              <Plus size={14} /> Add Extra House
+            </button>
+          )}
         </div>
 
         <div className="w-full overflow-x-auto">

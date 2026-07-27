@@ -5,7 +5,7 @@ import {
   Home, LayoutGrid, Settings, ChevronLeft, ChevronRight, 
   FolderPlus, Users, ClipboardList, HardHat, Files, 
   FileCheck, ChevronDown, LogOut, Activity, PieChart,
-  ClipboardCheck, Layers, IndianRupee
+  ClipboardCheck, Layers, IndianRupee, UserCheck // <-- ADDED UserCheck
 } from 'lucide-react';
 
 // Import Auth Tools
@@ -115,15 +115,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           <NavItem onClick={handleMobileClose} to="/dashboard/site-visit" icon={<HardHat size={18} />} label="Site Visit" active={location.pathname === '/dashboard/site-visit'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
-        
-
         {/* 7.5 Construction Stage */}
         {hasAccess('construction-stage') && (
           <NavItem onClick={handleMobileClose} to="/dashboard/construction-stage" icon={<Layers size={18} />} label="Construction Stage" active={location.pathname === '/dashboard/construction-stage'} collapsed={isMobileOpen ? false : isCollapsed} />
         )}
 
         {/* 7.6 Financial Progress (Visible to Commissioner & Department Head) */}
-        {/* FIX: Correctly referencing ROLES.DEPT_HEAD here! */}
         {(userRole === ROLES.COMMISSIONER || userRole === ROLES.DEPT_HEAD) && (
           <NavItem 
             onClick={handleMobileClose} 
@@ -134,8 +131,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             collapsed={isMobileOpen ? false : isCollapsed} 
           />
         )}
-
-        
 
         {/* 9. Schemes - Hidden for Commissioner and Engineer */}
         {hasAccess('schemes') && userRole !== ROLES.COMMISSIONER && userRole !== ROLES.ENGINEER && (
@@ -148,6 +143,18 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
         )}
 
         
+
+        {/* 11. Divisional Incharge - Visible ONLY to Commissioner */}
+        {userRole === ROLES.COMMISSIONER && (
+          <NavItem 
+            onClick={handleMobileClose} 
+            to="/dashboard/divisional-incharge" 
+            icon={<UserCheck size={18} />} 
+            label="Divisional Incharge" 
+            active={location.pathname === '/dashboard/divisional-incharge'} 
+            collapsed={isMobileOpen ? false : isCollapsed} 
+          />
+        )}
 
       </nav>
 

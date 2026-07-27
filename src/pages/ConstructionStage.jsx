@@ -105,9 +105,7 @@ const ConstructionStage = () => {
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">LIG</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">EWS</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">Others</th>
-                
-                {/* NEW: Action header only visible to engineers */}
-                {userRole === ROLES.ENGINEER && (
+                {userRole !== ROLES.COMMISSIONER && (
                   <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[12%] border-l border-cghb-border">Action</th>
                 )}
               </tr>
@@ -115,7 +113,7 @@ const ConstructionStage = () => {
             <tbody className="divide-y divide-cghb-border/50">
               <AnimatePresence>
                 {currentData.length === 0 ? (
-                  <tr><td colSpan={userRole === ROLES.ENGINEER ? "9" : "8"} className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No projects found in this stage.</td></tr>
+                  <tr><td colSpan={userRole === ROLES.COMMISSIONER ? "8" : "9"} className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No projects found in this stage.</td></tr>
                 ) : (
                   currentData.map((p, index) => (
                     <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={p.id} className="hover:bg-cghb-border/5 transition-colors">
@@ -148,8 +146,8 @@ const ConstructionStage = () => {
                         </td>
                       ))}
 
-                      {/* NEW: Action cell only visible to engineers */}
-                      {userRole === ROLES.ENGINEER && (
+                      {/* Action cell completely removed for Commissioners */}
+                      {userRole !== ROLES.COMMISSIONER && (
                         <td className="px-4 py-4 text-center border-l border-cghb-border/50">
                           {p.status === 'Completed' ? (
                             <button 

@@ -3,18 +3,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Megaphone, Search, Filter, Calendar, 
   Plus, Edit, Trash2, Eye, UploadCloud, X, Save, 
-  ChevronLeft, ChevronRight, MoreVertical, Download, Check, Newspaper
+  ChevronLeft, ChevronRight, MoreVertical, Download, Check, Newspaper, AlertCircle,
+  ArrowLeft, FileText, LayoutList
 } from 'lucide-react';
 
 // Import Auth Tools
 import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../utils/roles';
 
-// Mock Database for Advertisements (Updated with arrays for media and Approved By field)
+// Mock Database for Advertisements (Updated to show Approved / Upload Req. statuses)
 const initialAds = [
   { id: '1', district: 'Raipur', project: 'Atal Vihar Phase 2', refNo: 'NIT-2026-042', media: ['Print (Local) - Dainik Bhaskar', 'Web Portal - CGHB Site'], date: '2026-05-15', approvedBy: 'Chief Engineer', hasDoc: true },
-  { id: '2', district: 'Nava Raipur', project: 'Nava Raipur EWS', refNo: 'NIT-2026-044', media: ['Print (National) - Times of India'], date: '2026-05-02', approvedBy: 'Board Resolution', hasDoc: true },
-  { id: '3', district: 'Bastar', project: 'Bastar Villas', refNo: 'NIT-2026-039', media: ['Web Portal - State Procure'], date: '2026-04-28', approvedBy: 'State Govt', hasDoc: true },
+  { id: '2', district: 'Nava Raipur', project: 'Nava Raipur EWS Block C', refNo: 'NIT-2026-044', media: ['Print (National) - Times of India'], date: '2026-05-02', approvedBy: 'Board Resolution', hasDoc: false }, // False shows the Orange "Upload Req." badge
+  { id: '3', district: 'Bastar', project: 'Bastar Standalone Villas', refNo: 'NIT-2026-039', media: ['Web Portal - State Procure'], date: '2026-04-28', approvedBy: 'State Govt', hasDoc: true },
+  { id: '4', district: 'Bilaspur', project: 'Bilaspur MIG Heights', refNo: 'NIT-2026-051', media: ['Print (Local) - Navbharat'], date: '2026-05-10', approvedBy: 'Superintending Engineer', hasDoc: false },
 ];
 
 const Advertisement = () => {
@@ -23,9 +25,12 @@ const Advertisement = () => {
   const [ads, setAds] = useState(initialAds);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Track which 3-dot dropdown is currently open
+  // Track which 3-dot dropdown is currently open (Stores object with id and coordinates)
   const [activeDropdown, setActiveDropdown] = useState(null);
   
+  // View Details State
+  const [viewingAd, setViewingAd] = useState(null);
+
   // Gateway Selection State
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
@@ -91,7 +96,7 @@ const Advertisement = () => {
     }
 
     if (editingId) {
-      setAds(ads.map(ad => ad.id === editingId ? { ...ad, refNo: formData.refNo, date: formData.date, approvedBy: formData.approvedBy, media: formData.mediaList } : ad));
+      setAds(ads.map(ad => ad.id === editingId ? { ...ad, refNo: formData.refNo, date: formData.date, approvedBy: formData.approvedBy, media: formData.mediaList, hasDoc: fileName !== '' || ad.hasDoc } : ad));
       setEditingId(null);
     } else {
       const newAd = {
@@ -123,7 +128,7 @@ const Advertisement = () => {
     setFormData({
       refNo: ad.refNo, mediaList: ad.media, date: ad.date, approvedBy: ad.approvedBy
     });
-    setFileName('advertisement_copy.pdf'); // Mock existing file
+    setFileName(ad.hasDoc ? 'advertisement_copy.pdf' : ''); // Mock existing file if hasDoc is true
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -134,15 +139,24 @@ const Advertisement = () => {
     }
   };
 
-  const handleView = (project) => {
-    alert(`Opening Advertisement Details for ${project}`);
+  const handleView = (ad) => {
+    setViewingAd(ad);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBack = () => {
+    setViewingAd(null);
   };
 
   // Close dropdown when clicking anywhere else
   useEffect(() => {
     const handleClickOutside = () => setActiveDropdown(null);
     document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    window.addEventListener("scroll", handleClickOutside, true); 
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+      window.removeEventListener("scroll", handleClickOutside, true);
+    };
   }, []);
 
   // --- FILTER & PAGINATION ---
@@ -159,6 +173,85 @@ const Advertisement = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+
+  // ============================================================================
+  // VIEW 2: PROFILE/DETAILS PAGE
+  // ============================================================================
+  if (viewingAd) {
+    return (
+      <div className="w-full max-w-[1400px] mx-auto animate-in fade-in slide-in-from-right-4 duration-300 font-sans relative z-10 space-y-6">
+        <div className="flex items-center gap-4 border-b border-cghb-border pb-6">
+          <button onClick={handleBack} className="p-2.5 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-cghb-border/20 transition-all shadow-sm">
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-[var(--color-text-main)] uppercase">Advertisement <span className="text-cghb-yellow">Details</span></h1>
+            <p className="text-[13px] text-[var(--color-text-muted)] font-medium mt-1 flex items-center gap-2">
+              <LayoutList size={14} className="text-cghb-yellow" /> Campaign for: {viewingAd.project} <span className="opacity-50">|</span> {viewingAd.refNo}
+            </p>
+          </div>
+        </div>
+
+        <div className="glass-panel p-8 md:p-10 rounded-xl border border-cghb-border shadow-sm space-y-10">
+          <div>
+            <h3 className="text-[12px] font-black text-cghb-yellow uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">1. Core Campaign Data</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm md:col-span-2">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Project Name</span>
+                <span className="block text-[15px] font-black text-[var(--color-text-main)]">{viewingAd.project}</span>
+              </div>
+              <div className="bg-[var(--color-bg-main)] p-4 rounded-lg border border-cghb-border/50 shadow-sm md:col-span-2">
+                <span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">NIT Reference No.</span>
+                <span className="block text-[15px] font-mono font-black text-[var(--color-text-main)]">{viewingAd.refNo}</span>
+              </div>
+              <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">District</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingAd.district}</span></div>
+              <div><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Publication Date</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingAd.date}</span></div>
+              <div className="md:col-span-2"><span className="block text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Approved By</span><span className="block text-[14px] font-medium text-[var(--color-text-main)]">{viewingAd.approvedBy}</span></div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-[12px] font-black text-blue-500 uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">2. Media Channels Synced</h3>
+            <div className="flex flex-wrap gap-3">
+              {viewingAd.media.map((channel, i) => (
+                <span key={i} className="bg-blue-500/10 text-blue-500 border border-blue-500/20 px-4 py-2 rounded-lg text-[13px] font-bold shadow-sm">
+                  {channel}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-[12px] font-black text-emerald-500 uppercase tracking-widest mb-4 border-b border-cghb-border/50 pb-2">3. Official Document Attached</h3>
+            <div className="grid grid-cols-1 gap-4">
+              {viewingAd.hasDoc ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-[var(--color-bg-main)] border border-cghb-border/50 rounded-lg shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 flex items-center justify-center rounded-lg shrink-0"><FileText size={18}/></div>
+                    <div>
+                      <h4 className="text-[14px] font-bold text-[var(--color-text-main)]">Advertisement_Copy.pdf</h4>
+                      <p className="text-[12px] text-[var(--color-text-muted)]">Official published document</p>
+                    </div>
+                  </div>
+                  <button className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg text-[12px] font-bold text-[var(--color-text-main)] hover:border-emerald-500 hover:text-emerald-500 transition-all shadow-sm">
+                    <Download size={14}/> Download
+                  </button>
+                </div>
+              ) : (
+                <div className="p-6 bg-orange-500/10 border border-orange-500/20 rounded-lg text-orange-600 text-[13px] font-bold flex items-center gap-2">
+                  <AlertCircle size={16}/> No document has been uploaded for this advertisement yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // VIEW 1: MAIN DASHBOARD & DIRECTORY
+  // ============================================================================
   return (
     <div className="w-full max-w-[1400px] mx-auto animate-in fade-in duration-300 font-sans relative z-10 space-y-6">
       
@@ -206,8 +299,6 @@ const Advertisement = () => {
           </div>
         </div>
       </div>
-
-     
 
       {/* --- FORM ENGINE (Hidden for Commissioner) --- */}
       {userRole !== ROLES.COMMISSIONER && (
@@ -332,103 +423,94 @@ const Advertisement = () => {
         </button>
       </div>
 
-      {/* --- ADVERTISEMENT MASTER TABLE (LOCKED UI) --- */}
-      <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden">
-        <div className="w-full">
-          {/* table-fixed prevents horizontal scroll */}
-          <table className="w-full table-fixed text-left whitespace-nowrap">
+      {/* --- ADVERTISEMENT MASTER TABLE --- */}
+      <div className="bg-[var(--color-bg-main)] shadow-md rounded-xl border border-cghb-border flex flex-col w-full overflow-hidden relative">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full table-fixed text-left whitespace-nowrap min-w-[1300px]">
             <thead className="bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-b-2 border-cghb-border">
               <tr>
-                {/* Total Widths = 100% */}
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">S.No</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[22%]">Project Name</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[15%]">NIT Reference</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[24%]">Media Channels</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Date</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%]">Approved By</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[6%] border-l border-cghb-border">Doc</th>
-                <th className="px-3 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[6%]">Action</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%]">S.No</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[18%]">Project Name</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%]">NIT Reference</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[24%]">Media Channels</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[10%]">Date</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[12%]">Approved By</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[14%]">Document Status</th>
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[5%] border-l border-cghb-border">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-cghb-border/50">
               <AnimatePresence>
-                {currentAds.map((ad, index) => (
-                  // NO HOVER STYLES HERE
-                  <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={ad.id} className="bg-transparent border-b border-cghb-border/50 last:border-0">
-                    <td className="px-3 py-4 text-center text-[11px] font-bold text-[var(--color-text-muted)] truncate" title={indexOfFirstItem + index + 1}>{indexOfFirstItem + index + 1}</td>
-                    <td className="px-3 py-4 text-[12px] font-bold text-[var(--color-text-main)] truncate" title={ad.project}>{ad.project}</td>
-                    <td className="px-3 py-4 font-mono text-[11px] font-bold text-[var(--color-text-main)] truncate" title={ad.refNo}>{ad.refNo}</td>
-                    
-                    {/* Media Channels rendered as minimal badges inside a truncated container */}
-                    <td className="px-3 py-4 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={ad.media.join(', ')}>
-                      <div className="flex gap-1.5 overflow-hidden">
-                        {ad.media.map((channel, i) => (
-                          <span key={i} className="bg-cghb-border/10 border border-cghb-border/50 px-1.5 py-0.5 rounded truncate max-w-[120px] shrink-0">
-                            {channel}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    
-                    <td className="px-3 py-4 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={ad.date}>
-                      <span className="flex items-center gap-1"><Calendar size={10} className="text-[var(--color-text-muted)] shrink-0"/>{ad.date}</span>
-                    </td>
-                    
-                    <td className="px-3 py-4 text-[11px] font-bold text-[var(--color-text-main)] truncate" title={ad.approvedBy}>{ad.approvedBy}</td>
-
-                    <td className="px-3 py-4 text-center border-l border-cghb-border/50">
-                      {ad.hasDoc 
-                        ? <button className="mx-auto flex items-center justify-center text-[var(--color-text-muted)] hover:text-cghb-yellow transition-colors" title="Download Document"><Download size={16} strokeWidth={2.5}/></button> 
-                        : <span className="text-[var(--color-text-muted)]/30">-</span>}
-                    </td>
-
-                    {/* Actions: 3 Dots Dropdown */}
-                    <td className="px-3 py-4 text-center relative">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation(); 
-                          setActiveDropdown(activeDropdown === ad.id ? null : ad.id);
-                        }} 
-                        className="text-[var(--color-text-muted)] outline-none hover:text-[var(--color-text-main)]"
-                      >
-                        <MoreVertical size={16} />
-                      </button>
+                {currentAds.length === 0 ? (
+                  <tr><td colSpan="8" className="p-8 text-center text-[var(--color-text-muted)] text-[13px] font-medium">No campaigns found matching the criteria.</td></tr>
+                ) : (
+                  currentAds.map((ad, index) => (
+                    <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={ad.id} className="hover:bg-cghb-border/5 transition-colors">
+                      <td className="px-4 py-4 text-[11px] font-bold text-[var(--color-text-muted)] text-center">{indexOfFirstItem + index + 1}</td>
+                      <td className="px-4 py-4 text-[12px] font-bold text-[var(--color-text-main)] truncate" title={ad.project}>{ad.project}</td>
+                      <td className="px-4 py-4 font-mono text-[12px] font-bold text-[var(--color-text-main)] truncate" title={ad.refNo}>{ad.refNo}</td>
                       
-                      {/* Dropdown Menu */}
-                      {activeDropdown === ad.id && (
-                        <div className="absolute right-8 top-6 w-32 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-xl z-50 flex flex-col py-1.5 text-left">
-                          <button onClick={() => { handleView(ad.project); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
-                            <Eye size={14} /> View Ad
-                          </button>
-                          {userRole !== ROLES.COMMISSIONER && (
-                            <>
-                              <button onClick={() => { handleEdit(ad); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-blue-500 flex items-center gap-2.5 hover:bg-blue-500/10">
-                                <Edit size={14} /> Edit
-                              </button>
-                              <button onClick={() => { handleDelete(ad.id); setActiveDropdown(null); }} className="px-4 py-2.5 text-[12px] font-bold text-red-500 flex items-center gap-2.5 hover:bg-red-500/10">
-                                <Trash2 size={14} /> Delete
-                              </button>
-                            </>
-                          )}
+                      {/* Media Channels rendered as minimal badges inside a truncated container */}
+                      <td className="px-4 py-4 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={ad.media.join(', ')}>
+                        <div className="flex gap-1.5 overflow-hidden">
+                          {ad.media.map((channel, i) => (
+                            <span key={i} className="bg-cghb-border/10 border border-cghb-border/50 px-1.5 py-0.5 rounded truncate max-w-[120px] shrink-0">
+                              {channel}
+                            </span>
+                          ))}
                         </div>
-                      )}
-                    </td>
-                  </motion.tr>
-                ))}
+                      </td>
+                      
+                      <td className="px-4 py-4 text-[11px] font-medium text-[var(--color-text-main)] truncate" title={ad.date}>
+                        <span className="flex items-center gap-1"><Calendar size={12} className="text-[var(--color-text-muted)] shrink-0"/>{ad.date}</span>
+                      </td>
+                      
+                      <td className="px-4 py-4 text-[11px] font-bold text-[var(--color-text-main)] truncate" title={ad.approvedBy}>{ad.approvedBy}</td>
+
+                      {/* STYLISH DOCUMENT BADGES FROM REFERENCE */}
+                      <td className="px-4 py-4 text-center">
+                        {ad.hasDoc ? (
+                          <span className="mx-auto flex items-center justify-center gap-1.5 text-emerald-500 bg-emerald-500/10 px-4 py-1.5 rounded-lg text-[11px] font-bold border border-emerald-500/20 max-w-[120px] uppercase tracking-wider">
+                            <Check size={14}/> Approved
+                          </span>
+                        ) : (
+                          <span className="mx-auto flex items-center justify-center gap-1.5 text-orange-500 bg-orange-500/10 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-orange-500/20 max-w-[120px] uppercase tracking-wider">
+                            <AlertCircle size={12}/> Upload Req.
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions: 3 Dots Dropdown Trigger */}
+                      <td className="px-4 py-4 text-center relative border-l border-cghb-border/50">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation(); 
+                            if (activeDropdown?.id === ad.id) {
+                              setActiveDropdown(null);
+                            } else {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setActiveDropdown({
+                                id: ad.id,
+                                top: rect.bottom + 4,
+                                left: rect.left - 130 
+                              });
+                            }
+                          }} 
+                          className="text-[var(--color-text-muted)] outline-none hover:text-[var(--color-text-main)] p-1 rounded transition-colors hover:bg-cghb-border/20"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
               </AnimatePresence>
             </tbody>
           </table>
-
-          {currentAds.length === 0 && (
-            <div className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium flex flex-col items-center justify-center gap-3 border-t border-cghb-border/50">
-              <Megaphone size={32} className="text-[var(--color-text-muted)]/30" />
-              No campaigns found matching the criteria.
-            </div>
-          )}
         </div>
 
         {/* --- ALWAYS VISIBLE PAGINATION --- */}
-        <div className="border-t border-cghb-border px-5 py-4 flex items-center justify-between bg-[var(--color-bg-surface)]">
+        <div className="border-t border-cghb-border px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[var(--color-bg-surface)]">
           <span className="text-[12px] text-[var(--color-text-muted)] font-medium">
             Viewing <strong className="text-[var(--color-text-main)]">{filteredAds.length === 0 ? 0 : indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredAds.length)}</strong> of <strong className="text-[var(--color-text-main)]">{filteredAds.length}</strong>
           </span>
@@ -448,6 +530,37 @@ const Advertisement = () => {
         </div>
 
       </div>
+
+      {/* --- GLOBAL FIXED DROPDOWN MENU --- */}
+      <AnimatePresence>
+        {activeDropdown && (() => {
+          const ad = ads.find(r => r.id === activeDropdown.id);
+          if (!ad) return null;
+          return (
+            <motion.div 
+              initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}
+              style={{ position: 'fixed', top: activeDropdown.top, left: activeDropdown.left, zIndex: 9999 }}
+              className="w-40 bg-[var(--color-bg-surface)] border border-cghb-border rounded-lg shadow-2xl flex flex-col py-1.5 text-left"
+              onClick={(e) => e.stopPropagation()} 
+            >
+              <button onClick={() => { handleView(ad); setActiveDropdown(null); }} className="px-4 py-3 md:py-2.5 text-[13px] md:text-[12px] font-bold text-[var(--color-text-main)] flex items-center gap-2.5 hover:bg-cghb-border/10">
+                <Eye size={14} /> View Details
+              </button>
+              {userRole !== ROLES.COMMISSIONER && (
+                <>
+                  <button onClick={() => { handleEdit(ad); setActiveDropdown(null); }} className="px-4 py-3 md:py-2.5 text-[13px] md:text-[12px] font-bold text-blue-500 flex items-center gap-2.5 hover:bg-blue-500/10">
+                    <Edit size={14} /> Edit
+                  </button>
+                  <button onClick={() => { handleDelete(ad.id); setActiveDropdown(null); }} className="px-4 py-3 md:py-2.5 text-[13px] md:text-[12px] font-bold text-red-500 flex items-center gap-2.5 hover:bg-red-500/10 border-t border-cghb-border/50 mt-1 pt-2.5">
+                    <Trash2 size={14} /> Delete Full
+                  </button>
+                </>
+              )}
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
     </div>
   );
 };

@@ -29,6 +29,7 @@ import ConstructionWorkshop from '../pages/ConstructionWorkshop';
 import FinancialProgress from '../pages/FinancialProgress'; 
 // You will also need to import the detailed workspace!
 import FinancialWorkspace from '../pages/FinancialWorkspace'; 
+import DivisionalIncharge from '../pages/DivisionalIncharge';
 
 // --- AUTH TOOLS ---
 import { AuthProvider } from '../context/AuthContext';
@@ -72,6 +73,7 @@ const AppRouter = () => {
             <Route element={<ProtectedRoute allowedRoles={[ROLES.COMMISSIONER, ROLES.DEPT_HEAD]} />}>
               <Route path="create-project" element={<CreateProject />} />
               <Route path="engineers" element={<Engineers />} />
+              <Route path="divisional-incharge" element={<DivisionalIncharge />} />
               
               {/* Tender Approvals */}
               <Route path="tender/nit-approval" element={<NitApproval />} />
