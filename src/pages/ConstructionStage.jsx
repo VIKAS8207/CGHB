@@ -105,15 +105,13 @@ const ConstructionStage = () => {
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">LIG</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">EWS</th>
                 <th className="px-2 py-3.5 font-bold text-[10px] uppercase tracking-wider w-[7%] text-center">Others</th>
-                {userRole !== ROLES.COMMISSIONER && (
-                  <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[12%] border-l border-cghb-border">Action</th>
-                )}
+                <th className="px-4 py-3.5 font-bold text-[10px] uppercase tracking-wider text-center w-[12%] border-l border-cghb-border">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cghb-border/50">
               <AnimatePresence>
                 {currentData.length === 0 ? (
-                  <tr><td colSpan={userRole === ROLES.COMMISSIONER ? "8" : "9"} className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No projects found in this stage.</td></tr>
+                  <tr><td colSpan="9" className="p-12 text-center text-[var(--color-text-muted)] text-[13px] font-medium"><AlertCircle size={32} className="mx-auto mb-3 opacity-30"/> No projects found in this stage.</td></tr>
                 ) : (
                   currentData.map((p, index) => (
                     <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={p.id} className="hover:bg-cghb-border/5 transition-colors">
@@ -146,26 +144,24 @@ const ConstructionStage = () => {
                         </td>
                       ))}
 
-                      {/* Action cell completely removed for Commissioners */}
-                      {userRole !== ROLES.COMMISSIONER && (
-                        <td className="px-4 py-4 text-center border-l border-cghb-border/50">
-                          {p.status === 'Completed' ? (
-                            <button 
-                              onClick={() => navigate(`/dashboard/construction-stage/${p.id}?mode=view`)}
-                              className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-blue-500/10 text-blue-500 rounded-lg text-[11px] font-bold uppercase tracking-wider hover:bg-blue-500 hover:text-white transition-all shadow-sm border border-blue-500/20"
-                            >
-                              <Eye size={14} /> View Log
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={() => navigate(`/dashboard/construction-stage/${p.id}`)}
-                              className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-cghb-yellow text-black rounded-lg text-[11px] font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-md"
-                            >
-                              <Edit2 size={14} /> Update
-                            </button>
-                          )}
-                        </td>
-                      )}
+                      {/* Action cell visible to all, but logic restricts Commissioner to View Log only */}
+                      <td className="px-4 py-4 text-center border-l border-cghb-border/50">
+                        {userRole === ROLES.COMMISSIONER || p.status === 'Completed' ? (
+                          <button 
+                            onClick={() => navigate(`/dashboard/construction-stage/${p.id}?mode=view`)}
+                            className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-blue-500/10 text-blue-500 rounded-lg text-[11px] font-bold uppercase tracking-wider hover:bg-blue-500 hover:text-white transition-all shadow-sm border border-blue-500/20"
+                          >
+                            <Eye size={14} /> View Log
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => navigate(`/dashboard/construction-stage/${p.id}`)}
+                            className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-cghb-yellow text-black rounded-lg text-[11px] font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-md"
+                          >
+                            <Edit2 size={14} /> Update
+                          </button>
+                        )}
+                      </td>
 
                     </motion.tr>
                   ))
